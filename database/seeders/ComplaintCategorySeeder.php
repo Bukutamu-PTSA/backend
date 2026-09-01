@@ -18,6 +18,10 @@ class ComplaintCategorySeeder extends Seeder
             ['category_code' => 'WAKTU_KERJA', 'category_name' => 'Waktu Kerja & Lembur'],
             ['category_code' => 'PENEMPATAN_TK', 'category_name' => 'Penempatan Tenaga Kerja'],
             ['category_code' => 'K3', 'category_name' => 'Kesehatan & Keselamatan Kerja'],
+            ['category_code' => 'KADER NORMA', 'category_name' => 'Kader Norma Ketenagakerjaan'],
+            ['category_code' => 'PEREMPUAN ANAK', 'category_name' => 'Perempuan dan anak'],
+            ['category_code' => 'KADER K3', 'category_name' => 'Kader K3'],
+            ['category_code' => 'SKP', 'category_name' => 'SKP'],
         ];
 
         foreach ($categories as $category) {

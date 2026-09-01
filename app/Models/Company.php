@@ -13,10 +13,9 @@ class Company extends Model
 
     protected $fillable = [
         'nama_perusahaan',
-        'sektor_industri',
+        'sector_id',
         'alamat',
         'jumlah_naker',
-        'size_id',
         'provinsi',
         'kota_kab',
         'kecamatan',
@@ -26,16 +25,13 @@ class Company extends Model
     ];
 
     /**
-     * Relasi ke klasifikasi skala ukuran perusahaan.
-     */
-    public function size(): BelongsTo
-    {
-        return $this->belongsTo(CompanySize::class, 'size_id');
-    }
-
-    /**
      * Relasi ke daftar seluruh pengaduan yang melibatkan perusahaan ini.
      */
+    public function sector(): BelongsTo
+    {
+        return $this->belongsTo(IndustrialSector::class, 'sector_id');
+    }
+
     public function complaints(): HasMany
     {
         return $this->hasMany(Complaint::class);

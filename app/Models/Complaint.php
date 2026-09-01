@@ -7,10 +7,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\UploadedFile;
 
 class Complaint extends Model
 {
     use HasFactory;
+
+    protected $attributes = [
+        'status' => 'DIPROSES',
+    ];
 
     protected $fillable = [
         'complainant_id',
@@ -18,7 +23,6 @@ class Complaint extends Model
         'category_id',
         'assigned_to',
         'ticket_number',
-        'title',
         'description',
         'status',
         'priority',
@@ -94,6 +98,17 @@ class Complaint extends Model
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function addPhoto(UploadedFile $file): Attachment
+    {
+        return $this->attachments()->create([
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $file->store('complaints/'.$this->id, 'public'),
+            'file_type' => 'photo',
+            'file_size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+        ]);
     }
 
     /**

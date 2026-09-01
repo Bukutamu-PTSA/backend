@@ -1,0 +1,226 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Company;
+use App\Models\Complainant;
+use App\Models\Complaint;
+use App\Models\ComplaintCategory;
+use App\Models\User;
+use Database\Seeders\IndustrialSectorSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Tests\TestCase;
+
+class ComplaintStoreTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(IndustrialSectorSeeder::class);
+    }
+
+    private function payload(array $overrides = []): array
+    {
+        return array_merge([
+            'category_id' => 1,
+            'description' => 'Perusahaan tidak membayar upah sejak bulan Juli padahal sudah ditagih berkali-kali.',
+            'complainant' => [
+                'nama_lengkap' => 'Budi Santoso', 'nik' => '3201010101010001', 'alamat' => 'Jl. A No.1',
+                'jenis_kelamin' => 'laki-laki', 'jabatan' => 'Pekerja', 'no_telp' => '081234567890',
+            ],
+            'company' => [
+                'nama_perusahaan' => 'PT Maju Bersama', 'sector_id' => 1, 'alamat' => 'Jl. B',
+                'jumlah_naker' => 120, 'provinsi' => 'Jawa Barat', 'kota_kab' => 'Bekasi',
+                'kecamatan' => 'Cikarang', 'kelurahan' => 'Waluya',
+            ],
+        ], $overrides);
+    }
+
+    public function test_single_manual_post_creates_complaint_with_photos(): void
+    {
+        $user = User::create([
+            'username' => 'tester', 'email' => 'tester@mail.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        $response = $this->actingAs($user)->postJson('/api/complaints', $this->payload([
+            'attachments' => [
+                UploadedFile::fake()->create('bukti1.jpg', 50),
+                UploadedFile::fake()->create('bukti2.png', 50),
+            ],
+        ]));
+
+        $response->assertStatus(201)->assertJsonCount(2, 'data.attachments');
+
+        $this->assertSame(1, Complainant::count());
+        $this->assertSame(1, Company::count());
+        $this->assertSame(1, Complaint::count());
+    }
+
+    public function test_screenshot_payload_accepts_category_and_creates_complaint(): void
+    {
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+
+        $response = $this->postJson('/api/complaints', [
+            'category_id' => 1,
+            'description' => 'Perusahaan melakukan pelanggaran terhadap hak pekerja.',
+            'complainant' => [
+                'nama_lengkap' => 'Siti Aminah',
+                'nik' => '3201010101010002',
+                'alamat' => 'Jl. Merdeka No. 2',
+                'jenis_kelamin' => 'perempuan',
+                'jabatan' => 'Operator',
+                'no_telp' => '081234567891',
+            ],
+            'company' => [
+                'nama_perusahaan' => 'PT Sejahtera',
+                'sector_id' => 1,
+                'alamat' => 'Jl. Industri No. 2',
+                'jumlah_naker' => 25,
+                'provinsi' => 'Jawa Barat',
+                'kota_kab' => 'Bekasi',
+                'kecamatan' => 'Cikarang',
+                'kelurahan' => 'Waluya',
+            ],
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonMissingPath('data.title')
+            ->assertJsonPath('data.priority', 'MEDIUM')
+            ->assertJsonPath('data.category.id', 1)
+            ->assertJsonPath('data.category.category_name', 'Upah Kerja')
+            ->assertJsonPath('data.company.sector.id', 1)
+            ->assertJsonPath('data.company.sector.sector_code', 'AGRICULTURE');
+
+        $this->assertDatabaseHas('complaints', [
+            'priority' => 'MEDIUM',
+            'category_id' => 1,
+        ]);
+    }
+
+    public function test_master_endpoints_return_categories_and_industrial_sectors(): void
+    {
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+
+        $this->getJson('/api/complaint-categories')
+            ->assertOk()
+            ->assertJsonPath('0.category_code', 'UPAH_KERJA')
+            ->assertJsonPath('0.category_name', 'Upah Kerja');
+
+        $this->getJson('/api/industrial-sectors')
+            ->assertOk()
+            ->assertJsonCount(10)
+            ->assertJsonPath('0.sector_code', 'AGRICULTURE')
+            ->assertJsonPath('0.sector_name', 'Pertanian, Kehutanan, dan Perikanan');
+    }
+
+    public function test_category_is_required_when_creating_complaint(): void
+    {
+        $response = $this->postJson('/api/complaints', [
+            'description' => 'Perusahaan melakukan pelanggaran terhadap hak pekerja.',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['category_id', 'complainant.nama_lengkap', 'company.nama_perusahaan']);
+    }
+
+    public function test_same_nik_reuses_complainant(): void
+    {
+        $user = User::create([
+            'username' => 'tester', 'email' => 'tester@mail.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        $this->actingAs($user)->postJson('/api/complaints', $this->payload());
+        $this->actingAs($user)->postJson('/api/complaints', $this->payload());
+
+        $this->assertSame(1, Complainant::count());
+        $this->assertSame(2, Complaint::count());
+    }
+
+    public function test_dashboard_summary_counts_complaints_by_category(): void
+    {
+        $user = User::create([
+            'username' => 'dashboard', 'email' => 'dashboard@mail.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        $this->postJson('/api/complaints', $this->payload());
+        $this->postJson('/api/complaints', $this->payload([
+            'category_id' => 2,
+            'complainant' => [
+                'nama_lengkap' => 'Siti Aminah', 'nik' => '3201010101010002', 'alamat' => 'Jl. C',
+                'jenis_kelamin' => 'perempuan', 'jabatan' => 'Operator', 'no_telp' => '081234567891',
+            ],
+        ]));
+        $this->postJson('/api/complaints', $this->payload());
+        Complaint::latest('id')->first()->update(['category_id' => null]);
+
+        $response = $this->actingAs($user)->getJson('/api/dashboard/complaint-summary');
+
+        $response->assertOk()
+            ->assertJsonPath('meta.total', 3)
+            ->assertJsonPath('meta.uncategorized_count', 1)
+            ->assertJsonPath('data.0.category_code', 'UPAH_KERJA')
+            ->assertJsonPath('data.0.count', 1)
+            ->assertJsonPath('data.1.category_code', 'K3')
+            ->assertJsonPath('data.1.count', 1);
+    }
+
+    public function test_unauthenticated_returns_json_401(): void
+    {
+        $this->getJson('/api/complaints')
+            ->assertStatus(401)
+            ->assertJson(['message' => 'Unauthenticated. Token tidak valid.']);
+
+        $this->getJson('/api/dashboard/complaint-summary')->assertStatus(401);
+    }
+
+    public function test_wilayah_and_submit_work_without_login(): void
+    {
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        $this->getJson('/api/provinces')->assertOk();
+
+        $this->postJson('/api/complaints', $this->payload())
+            ->assertStatus(201);
+
+        $this->assertSame(1, Complaint::count());
+
+        $this->getJson('/api/complaints')->assertStatus(401);
+    }
+
+    public function test_status_change_creates_tracking_log(): void
+    {
+        $user = User::create([
+            'username' => 'tester', 'email' => 'tester@mail.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        $this->actingAs($user)->postJson('/api/complaints', $this->payload());
+        $id = Complaint::first()->id;
+
+        $response = $this->actingAs($user)->putJson("/api/complaints/$id", [
+            'status' => 'SELESAI',
+            'notes' => 'Upah sudah dibayar lunas',
+        ]);
+
+        $response->assertOk()->assertJsonCount(1, 'data.updates');
+        $this->assertSame('SELESAI', Complaint::first()->status);
+        $this->assertSame('DIPROSES', Complaint::first()->updates()->first()->old_status);
+        $this->assertSame('SELESAI', Complaint::first()->updates()->first()->new_status);
+
+        $this->actingAs($user)->putJson("/api/complaints/$id", [
+            'description' => 'Perusahaan sudah membayar seluruh upah pekerja.',
+        ]);
+        $this->assertSame(1, Complaint::first()->updates()->count());
+    }
+}

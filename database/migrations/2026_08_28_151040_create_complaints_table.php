@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('ticket_number')->unique();
             $table->string('title');
             $table->longText('description');
-            $table->enum('status', ['BARU', 'DIPROSES', 'SELESAI'])->default('BARU');
+            $table->enum('status', ['DIPROSES', 'SELESAI'])->default('DIPROSES');
             $table->enum('priority', ['LOW', 'MEDIUM', 'HIGH'])->default('MEDIUM');
             $table->dateTime('follow_up_date')->nullable();
             $table->longText('internal_notes')->nullable();
