@@ -10,7 +10,8 @@
         "laravel/framework": "^13.17",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
-        "laravolt/indonesia": "^0.41.0"
+        "laravolt/indonesia": "^0.41.0",
+        "scalar/laravel": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

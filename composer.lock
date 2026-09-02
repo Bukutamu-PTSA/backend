@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1d39e4692a28d725870419b9ad42a094",
+    "content-hash": "bd617c3dd6834e0ed5e3501f008aabf3",
     "packages": [
         {
             "name": "brick/math",
@@ -3403,6 +3403,138 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.9.3"
             },
             "time": "2026-06-18T03:57:49+00:00"
+        },
+        {
+            "name": "scalar/laravel",
+            "version": "0.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/scalar/laravel.git",
+                "reference": "02c5307e73be858eebd1c640fd1b8e0222b8d1e2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/scalar/laravel/zipball/02c5307e73be858eebd1c640fd1b8e0222b8d1e2",
+                "reference": "02c5307e73be858eebd1c640fd1b8e0222b8d1e2",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^11.0||^12.0||^13.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.14",
+                "nunomaduro/collision": "^8.7.0",
+                "orchestra/testbench": "^9.0||^10.0||^11.0",
+                "pestphp/pest": "^3.7.4||^4.0||^5.0",
+                "pestphp/pest-plugin-arch": "^3.0.0||^4.0||^5.0",
+                "pestphp/pest-plugin-laravel": "^3.1.0||^4.0||^5.0",
+                "pestphp/pest-plugin-type-coverage": "^3.0||^4.0||^5.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Scalar": "Scalar\\Facades\\Scalar"
+                    },
+                    "providers": [
+                        "Scalar\\ScalarServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Scalar\\": "src/",
+                    "Scalar\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Hans Pagel",
+                    "email": "mail@hanspagel.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Render your OpenAPI-based API reference",
+            "homepage": "https://github.com/scalar/laravel",
+            "keywords": [
+                "laravel",
+                "openapi",
+                "scalar",
+                "swagger"
+            ],
+            "support": {
+                "issues": "https://github.com/scalar/laravel/issues",
+                "source": "https://github.com/scalar/laravel/tree/0.4.0"
+            },
+            "time": "2026-08-24T12:16:35+00:00"
+        },
+        {
+            "name": "spatie/laravel-package-tools",
+            "version": "1.93.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/laravel-package-tools.git",
+                "reference": "e927d5b5b05e9fecae098e559e51918aa608ad02"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/laravel-package-tools/zipball/e927d5b5b05e9fecae098e559e51918aa608ad02",
+                "reference": "e927d5b5b05e9fecae098e559e51918aa608ad02",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.5",
+                "orchestra/testbench": "^8.0|^9.2|^10.0|^11.0",
+                "pestphp/pest": "^2.1|^3.1|^4.0",
+                "phpunit/php-code-coverage": "^10.0|^11.0|^12.0",
+                "phpunit/phpunit": "^10.5|^11.5|^12.5",
+                "spatie/pest-plugin-test-time": "^2.2|^3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Spatie\\LaravelPackageTools\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Freek Van der Herten",
+                    "email": "freek@spatie.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Tools for creating Laravel packages",
+            "homepage": "https://github.com/spatie/laravel-package-tools",
+            "keywords": [
+                "laravel-package-tools",
+                "spatie"
+            ],
+            "support": {
+                "issues": "https://github.com/spatie/laravel-package-tools/issues",
+                "source": "https://github.com/spatie/laravel-package-tools/tree/1.93.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/spatie",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-08-26T09:13:25+00:00"
         },
         {
             "name": "symfony/clock",
@@ -8837,12 +8969,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.3"
     },
-    "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "platform-dev": [],
+    "plugin-api-version": "2.6.0"
 }

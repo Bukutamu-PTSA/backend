@@ -2,10 +2,20 @@
 
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\ComplaintController;
+use App\Http\Controllers\Api\ScalarDocsController;
+use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\WilayahController;
 use App\Models\ComplaintCategory;
 use App\Models\IndustrialSector;
 use Illuminate\Support\Facades\Route;
+
+// Scalar Documentation routes
+Route::get('/docs', [ScalarDocsController::class, 'index']);
+Route::get('/docs/openapi', [ScalarDocsController::class, 'openapi']);
+
+// Public Survey routes
+Route::get('/surveys/{survey}', [SurveyController::class, 'show']);
+Route::post('/surveys/{survey}/responses', [SurveyController::class, 'storeResponses']);
 
 Route::get('/provinces', [WilayahController::class, 'getProvinces']);
 Route::get('/cities/{province_code}', [WilayahController::class, 'getCities']);
@@ -18,6 +28,10 @@ Route::get('industrial-sectors', fn () => IndustrialSector::orderBy('id')->get([
 Route::post('complaints', [ComplaintController::class, 'store']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    // Survey protected routes
+    Route::post('/surveys', [SurveyController::class, 'store']);
+    Route::patch('/surveys/{survey}/close', [SurveyController::class, 'close']);
+
     Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
     Route::apiResource('complaints', ComplaintController::class)->except('store');
     Route::get('complaints/{complaint}/attachments', [AttachmentController::class, 'index']);
