@@ -172,6 +172,15 @@ class SurveyController
                     $question = $surveyQuestions[$questionId];
                     $answeredQuestions[$question->question_number] = true;
 
+                    // Validate Nama Petugas
+                    if ($question->question_number === 1) {
+                        $isValidPetugas = AdminProfile::where('nama_petugas', $answer)->exists();
+
+                        if (!$isValidPetugas) {
+                            throw new \Exception("Nama Petugas tidak terdaftar");
+                        }
+                    }
+
                     // Validate likert responses
                     if ($question->type === 'likert') {
                         if (!in_array($answer, ['Baik', 'Cukup', 'Kurang'])) {

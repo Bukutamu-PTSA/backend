@@ -43,8 +43,10 @@ Route::post('complaints', [ComplaintController::class, 'store']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // Survey protected routes
-    Route::post('/surveys', [SurveyController::class, 'store']);
-    Route::patch('/surveys/{survey}/close', [SurveyController::class, 'close']);
+    Route::post('/surveys', [SurveyController::class, 'store'])
+    ->middleware('role:admin,super_admin');
+    Route::patch('/surveys/{survey}/close', [SurveyController::class, 'close'])
+    ->middleware('role:admin,super_admin');
 
     Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
     Route::apiResource('complaints', ComplaintController::class)->except('store');
