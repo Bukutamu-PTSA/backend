@@ -118,6 +118,67 @@ class ComplaintStoreTest extends TestCase
             ->assertJsonPath('0.sector_name', 'Pertanian, Kehutanan, dan Perikanan');
     }
 
+    public function test_complaint_index_filters_and_paginates(): void
+    {
+        $user = User::create([
+            'username' => 'filterer', 'email' => 'filterer@mail.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        foreach ([
+            ['nik' => '3201010101010002', 'name' => 'Budi Alpha', 'company' => 'PT Alpha', 'category_id' => 1],
+            ['nik' => '3201010101010003', 'name' => 'Siti Beta', 'company' => 'PT Beta', 'category_id' => 2],
+            ['nik' => '3201010101010004', 'name' => 'Rina Gamma', 'company' => 'PT Gamma', 'category_id' => 1],
+        ] as $item) {
+            $this->postJson('/api/complaints', $this->payload([
+                'category_id' => $item['category_id'],
+                'complainant' => [
+                    'nama_lengkap' => $item['name'], 'nik' => $item['nik'], 'alamat' => 'Jl. Filter',
+                    'jenis_kelamin' => 'perempuan', 'jabatan' => 'Pekerja', 'no_telp' => '081234567899',
+                ],
+                'company' => [
+                    'nama_perusahaan' => $item['company'], 'sector_id' => 1, 'alamat' => 'Jl. Company',
+                    'jumlah_naker' => 20, 'provinsi' => 'Jawa Barat', 'kota_kab' => 'Bekasi',
+                    'kecamatan' => 'Cikarang', 'kelurahan' => 'Waluya',
+                ],
+            ]))->assertCreated();
+        }
+
+        $complaints = Complaint::orderBy('id')->get();
+        $complaints[0]->update(['complaint_date' => '2026-08-27', 'status' => 'DIPROSES']);
+        $complaints[1]->update(['complaint_date' => '2026-08-15', 'status' => 'SELESAI']);
+        $complaints[2]->update(['complaint_date' => '2026-07-02', 'status' => 'DIPROSES']);
+
+        $this->actingAs($user)
+            ->getJson('/api/complaints?search=Alpha&month=8&year=2026&per_page=10')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.complainant.nama_lengkap', 'Budi Alpha')
+            ->assertJsonPath('meta.total', 1);
+
+        $this->actingAs($user)
+            ->getJson('/api/complaints?category_id=2&status=SELESAI&month=8&year=2026')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.complainant.nama_lengkap', 'Siti Beta');
+
+        $this->actingAs($user)
+            ->getJson('/api/complaints?per_page=2&page=2')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('meta.total', 3)
+            ->assertJsonPath('meta.per_page', 2)
+            ->assertJsonPath('meta.current_page', 2)
+            ->assertJsonPath('meta.last_page', 2);
+
+        $this->actingAs($user)
+            ->getJson('/api/complaints?month=13')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['month']);
+    }
+
     public function test_category_is_required_when_creating_complaint(): void
     {
         $response = $this->postJson('/api/complaints', [

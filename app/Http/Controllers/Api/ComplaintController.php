@@ -38,11 +38,39 @@ class ComplaintController extends Controller
 
     public function index(Request $request)
     {
+        $filters = $request->validate([
+            'search' => 'nullable|string|max:255',
+            'status' => 'nullable|in:DIPROSES,SELESAI',
+            'category_id' => 'nullable|integer|exists:complaint_categories,id',
+            'month' => 'nullable|integer|between:1,12',
+            'year' => 'nullable|integer|between:1900,2200',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|between:1,100',
+        ]);
+
         $complaints = Complaint::with(['complainant', 'company.sector', 'category', 'assignedAdmin', 'attachments'])
-            ->when($request->query('status'), fn ($q, $s) => $q->byStatus($s))
-            ->when($request->query('category_id'), fn ($q, $c) => $q->byCategory($c))
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $term = '%'.mb_strtolower($search).'%';
+
+                $query->where(function ($query) use ($term) {
+                    $query->whereRaw('LOWER(ticket_number) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(description) LIKE ?', [$term])
+                        ->orWhereHas('complainant', fn ($query) => $query
+                            ->whereRaw('LOWER(nama_lengkap) LIKE ?', [$term])
+                            ->orWhereRaw('LOWER(nik) LIKE ?', [$term]))
+                        ->orWhereHas('company', fn ($query) => $query
+                            ->whereRaw('LOWER(nama_perusahaan) LIKE ?', [$term]))
+                        ->orWhereHas('category', fn ($query) => $query
+                            ->whereRaw('LOWER(category_name) LIKE ?', [$term]));
+                });
+            })
+            ->when($filters['status'] ?? null, fn ($query, $status) => $query->byStatus($status))
+            ->when($filters['category_id'] ?? null, fn ($query, $categoryId) => $query->byCategory($categoryId))
+            ->when($filters['month'] ?? null, fn ($query, $month) => $query->whereMonth('complaint_date', $month))
+            ->when($filters['year'] ?? null, fn ($query, $year) => $query->whereYear('complaint_date', $year))
             ->latest('complaint_date')
-            ->paginate($request->query('per_page', 15));
+            ->paginate($filters['per_page'] ?? 15)
+            ->withQueryString();
 
         return ComplaintResource::collection($complaints);
     }
