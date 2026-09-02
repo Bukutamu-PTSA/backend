@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Company;
+use App\Models\CompanySize;
 use App\Models\Complainant;
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
@@ -10,6 +11,7 @@ use App\Models\User;
 use Database\Seeders\IndustrialSectorSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ComplaintStoreTest extends TestCase
@@ -233,6 +235,104 @@ class ComplaintStoreTest extends TestCase
             ->assertJsonPath('data.0.count', 1)
             ->assertJsonPath('data.1.category_code', 'K3')
             ->assertJsonPath('data.1.count', 1);
+    }
+
+    public function test_dashboard_summary_can_filter_complaints_for_today(): void
+    {
+        $user = User::create([
+            'username' => 'today-dashboard', 'email' => 'today-dashboard@mail.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        $this->postJson('/api/complaints', $this->payload());
+        $this->postJson('/api/complaints', $this->payload(['category_id' => 2]));
+        $this->postJson('/api/complaints', $this->payload(['category_id' => 1]));
+
+        $complaints = Complaint::orderBy('id')->get();
+        $complaints[0]->update(['complaint_date' => now()]);
+        $complaints[1]->update(['complaint_date' => now()->subDay()]);
+        $complaints[2]->update(['complaint_date' => now(), 'category_id' => null]);
+
+        $response = $this->actingAs($user)->getJson('/api/dashboard/complaint-summary?period=today');
+
+        $response->assertOk()
+            ->assertJsonPath('meta.period', 'today')
+            ->assertJsonPath('meta.total', 2)
+            ->assertJsonPath('meta.uncategorized_count', 1)
+            ->assertJsonPath('data.0.category_code', 'UPAH_KERJA')
+            ->assertJsonPath('data.0.count', 1)
+            ->assertJsonPath('data.1.category_code', 'K3')
+            ->assertJsonPath('data.1.count', 0);
+
+        $this->actingAs($user)
+            ->getJson('/api/dashboard/complaint-summary?period=tomorrow')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['period']);
+    }
+
+    public function test_dashboard_statistics_returns_cards_and_chart_data(): void
+    {
+        $user = User::create([
+            'username' => 'statistics-dashboard', 'email' => 'statistics-dashboard@mail.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+        CompanySize::create(['size_code' => 'MICRO', 'size_name' => 'Mikro', 'min_employees' => 1, 'max_employees' => 4]);
+        CompanySize::create(['size_code' => 'LARGE', 'size_name' => 'Besar', 'min_employees' => 100, 'max_employees' => null]);
+
+        $this->postJson('/api/complaints', $this->payload())->assertCreated();
+        $this->postJson('/api/complaints', $this->payload(['category_id' => 2]))->assertCreated();
+        $complaint = Complaint::latest('id')->firstOrFail();
+        $complaint->update(['status' => 'SELESAI']);
+
+        $response = $this->actingAs($user)->getJson('/api/dashboard/statistics?period=today');
+
+        $response->assertOk()
+            ->assertJsonPath('data.total_complaints', 2)
+            ->assertJsonPath('data.completed_complaints', 1)
+            ->assertJsonPath('data.satisfaction_index', null)
+            ->assertJsonPath('data.satisfaction_responses', 0)
+            ->assertJsonPath('data.by_company_size.0.size_code', 'MICRO')
+            ->assertJsonPath('data.by_company_size.0.count', 0)
+            ->assertJsonPath('data.by_company_size.1.size_code', 'LARGE')
+            ->assertJsonPath('data.by_company_size.1.count', 2)
+            ->assertJsonPath('data.by_category.0.count', 1)
+            ->assertJsonPath('data.by_category.1.count', 1)
+            ->assertJsonPath('meta.period', 'today');
+    }
+
+    public function test_authenticated_user_can_download_complaint_pdf(): void
+    {
+        $user = User::create([
+            'username' => 'pdf-user', 'email' => 'pdf-user@mail.com',
+            'password' => bcrypt('password'), 'role' => 'admin',
+        ]);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        $this->postJson('/api/complaints', $this->payload())->assertCreated();
+        $complaint = Complaint::firstOrFail();
+        $path = 'complaints/'.$complaint->id.'/attachment.png';
+
+        Storage::fake('public');
+        Storage::disk('public')->put($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='));
+        $complaint->attachments()->create([
+            'file_name' => 'attachment.png',
+            'file_path' => $path,
+            'file_type' => 'photo',
+            'file_size' => 68,
+            'mime_type' => 'image/png',
+        ]);
+
+        $response = $this->actingAs($user)->get('/api/complaints/'.$complaint->id.'/pdf');
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('Content-Disposition', 'attachment; filename="complaint-'.$complaint->id.'.pdf"');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+        $this->assertStringContainsString('/Count 2', $response->getContent());
     }
 
     public function test_unauthenticated_returns_json_401(): void
