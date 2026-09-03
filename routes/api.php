@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ComplaintController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ScalarDocsController;
 use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\WilayahController;
@@ -25,6 +26,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
     });
+
+    // Dashboard & Report Routes
+    Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
+        Route::get('/dashboard/overview', [DashboardController::class, 'overview']);
+        Route::get('/reports/by-category', [DashboardController::class, 'reportByCategory']);
+        Route::get('/reports/by-company-size', [DashboardController::class, 'reportByCompanySize']);
+        Route::get('/reports/export/csv', [DashboardController::class, 'exportToCsv']);
+    });
 });
 
 // Public Survey routes
@@ -44,9 +53,10 @@ Route::post('complaints', [ComplaintController::class, 'store']);
 Route::middleware('auth:sanctum')->group(function () {
     // Survey protected routes
     Route::post('/surveys', [SurveyController::class, 'store'])
-    ->middleware('role:admin,super_admin');
+        ->middleware('role:admin,super_admin');
+
     Route::patch('/surveys/{survey}/close', [SurveyController::class, 'close'])
-    ->middleware('role:admin,super_admin');
+        ->middleware('role:admin,super_admin');
 
     Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
     Route::apiResource('complaints', ComplaintController::class)->except('store');
