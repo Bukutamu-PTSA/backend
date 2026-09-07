@@ -16,13 +16,12 @@ Route::get('complaint-categories', fn () => ComplaintCategory::orderBy('category
 Route::get('industrial-sectors', fn () => IndustrialSector::orderBy('id')->get(['id', 'sector_code', 'sector_name']));
 
 Route::post('complaints', [ComplaintController::class, 'store']);
+Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
+Route::get('dashboard/statistics', [ComplaintController::class, 'statistics']);
+Route::get('complaints/{complaint}/pdf', [ComplaintController::class, 'pdf']);
+Route::apiResource('complaints', ComplaintController::class)->except('store');
+Route::get('complaints/{complaint}/attachments', [AttachmentController::class, 'index']);
+Route::post('complaints/{complaint}/attachments', [AttachmentController::class, 'store']);
+Route::delete('complaints/{complaint}/attachments/{attachment}', [AttachmentController::class, 'destroy']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
-    Route::get('dashboard/statistics', [ComplaintController::class, 'statistics']);
-    Route::get('complaints/{complaint}/pdf', [ComplaintController::class, 'pdf']);
-    Route::apiResource('complaints', ComplaintController::class)->except('store');
-    Route::get('complaints/{complaint}/attachments', [AttachmentController::class, 'index']);
-    Route::post('complaints/{complaint}/attachments', [AttachmentController::class, 'store']);
-    Route::delete('complaints/{complaint}/attachments/{attachment}', [AttachmentController::class, 'destroy']);
-});
+Route::middleware('auth:sanctum')->group(function () {});

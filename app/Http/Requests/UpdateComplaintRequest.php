@@ -15,11 +15,6 @@ class UpdateComplaintRequest extends FormRequest
     {
         return [
             'description' => 'sometimes|string|min:20',
-            'status' => 'sometimes|in:DIPROSES,SELESAI',
-            'notes' => 'nullable|string',
-            'follow_up_date' => 'nullable|date',
-            'assigned_to' => 'nullable|exists:admin_profiles,id',
-            'internal_notes' => 'nullable|string',
         ];
     }
 }

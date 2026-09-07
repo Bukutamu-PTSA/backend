@@ -13,11 +13,6 @@ class ComplaintResource extends JsonResource
             'id' => $this->id,
             'ticket_number' => $this->ticket_number,
             'description' => $this->description,
-            'status' => $this->status,
-            'priority' => $this->priority,
-            'complaint_date' => $this->complaint_date?->format('Y-m-d H:i:s'),
-            'follow_up_date' => $this->follow_up_date?->format('Y-m-d H:i:s'),
-            'internal_notes' => $this->when($request->user()?->isAdmin(), $this->internal_notes),
             'attachments' => $this->whenLoaded('attachments', fn () => AttachmentResource::collection($this->attachments)),
             'complainant' => [
                 'id' => $this->complainant?->id,
@@ -33,6 +28,12 @@ class ComplaintResource extends JsonResource
                 'id' => $this->company?->id,
                 'nama_perusahaan' => $this->company?->nama_perusahaan,
                 'sector_id' => $this->company?->sector?->id,
+                'size_id' => $this->company?->size?->id,
+                'size' => [
+                    'id' => $this->company?->size?->id,
+                    'size_code' => $this->company?->size?->size_code,
+                    'size_name' => $this->company?->size?->size_name,
+                ],
                 'sector' => [
                     'id' => $this->company?->sector?->id,
                     'sector_code' => $this->company?->sector?->sector_code,
@@ -54,11 +55,6 @@ class ComplaintResource extends JsonResource
                 'category_name' => $this->category?->category_name,
                 'description' => $this->category?->description,
             ],
-            'assigned_to' => $this->when($this->assignedAdmin, [
-                'id' => $this->assignedAdmin?->id,
-                'nama' => $this->assignedAdmin?->nama_lengkap,
-            ]),
-            'updates' => $this->whenLoaded('updates', fn () => UpdateResource::collection($this->updates)),
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
         ];
     }

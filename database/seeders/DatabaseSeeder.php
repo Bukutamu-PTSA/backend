@@ -15,7 +15,9 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ComplaintCategorySeeder::class,
             IndustrialSectorSeeder::class,
+            CompanySizeSeeder::class,
             AttachmentCategorySeeder::class,
+            \Laravolt\Indonesia\Seeds\DatabaseSeeder::class,
         ]);
     }
 }

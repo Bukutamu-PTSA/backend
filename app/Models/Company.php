@@ -14,6 +14,7 @@ class Company extends Model
     protected $fillable = [
         'nama_perusahaan',
         'sector_id',
+        'size_id',
         'alamat',
         'jumlah_naker',
         'provinsi',
@@ -30,6 +31,11 @@ class Company extends Model
     public function sector(): BelongsTo
     {
         return $this->belongsTo(IndustrialSector::class, 'sector_id');
+    }
+
+    public function size(): BelongsTo
+    {
+        return $this->belongsTo(CompanySize::class, 'size_id');
     }
 
     public function complaints(): HasMany

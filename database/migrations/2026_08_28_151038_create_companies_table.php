@@ -16,14 +16,14 @@ return new class extends Migration
             $table->string('nama_perusahaan');
             $table->string('sektor_industri');
             $table->text('alamat');
-            $table->unsignedInteger('jumlah_naker');
+            $table->Integer('jumlah_naker');
             $table->foreignId('size_id')->constrained('company_sizes')->restrictOnDelete();
             $table->string('provinsi');
             $table->string('kota_kab');
             $table->string('kecamatan');
             $table->string('kelurahan');
-            $table->string('no_telp', 20)->nullable();
-            $table->string('email')->nullable();
+            $table->string('no_telp', 20);
+            $table->string('email');
             $table->timestamps();
         });
     }

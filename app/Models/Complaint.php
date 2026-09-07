@@ -13,35 +13,32 @@ class Complaint extends Model
 {
     use HasFactory;
 
-    protected $attributes = [
-        'status' => 'DIPROSES',
-    ];
-
     protected $fillable = [
         'complainant_id',
         'company_id',
         'category_id',
-        'assigned_to',
         'ticket_number',
         'description',
-        'status',
-        'priority',
-        'follow_up_date',
-        'internal_notes',
+        'is_deleted',
         'complaint_date',
     ];
 
     protected $casts = [
+        'is_deleted' => 'boolean',
         'complaint_date' => 'datetime',
-        'follow_up_date' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('active', fn (Builder $builder) => $builder->where('is_deleted', false));
+    }
 
     /**
      * Relasi ke data pelapor (complainant).
      */
     public function complainant(): BelongsTo
     {
-        return $this->belongsTo(Complainant::class);
+        return $this->belongsTo(Complainant::class, 'complainant_id');
     }
 
     /**
@@ -49,7 +46,7 @@ class Complaint extends Model
      */
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     /**
@@ -61,19 +58,11 @@ class Complaint extends Model
     }
 
     /**
-     * Relasi ke profil admin/petugas yang menangani tiket.
-     */
-    public function assignedAdmin(): BelongsTo
-    {
-        return $this->belongsTo(AdminProfile::class, 'assigned_to');
-    }
-
-    /**
      * Relasi ke berkas/file bukti pendukung.
      */
     public function attachments(): HasMany
     {
-        return $this->hasMany(Attachment::class);
+        return $this->hasMany(Attachment::class, 'complaint_id');
     }
 
     /**
@@ -82,14 +71,6 @@ class Complaint extends Model
     public function surveys(): HasMany
     {
         return $this->hasMany(Survey::class);
-    }
-
-    /**
-     * Relasi ke riwayat log/perubahan status aduan.
-     */
-    public function updates(): HasMany
-    {
-        return $this->hasMany(Update::class);
     }
 
     /**
@@ -109,14 +90,6 @@ class Complaint extends Model
             'file_size' => $file->getSize(),
             'mime_type' => $file->getMimeType(),
         ]);
-    }
-
-    /**
-     * Local Scope: Filter berdasarkan status aduan.
-     */
-    public function scopeByStatus(Builder $query, string $status): Builder
-    {
-        return $query->where('status', $status);
     }
 
     /**

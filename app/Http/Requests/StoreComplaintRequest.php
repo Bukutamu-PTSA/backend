@@ -25,7 +25,7 @@ class StoreComplaintRequest extends FormRequest
             'complainant.jenis_kelamin' => 'required|in:laki-laki,perempuan',
             'complainant.jabatan' => 'required|string|max:255',
             'complainant.no_telp' => 'required|string|max:20',
-            'complainant.email' => 'nullable|email|max:255',
+            'complainant.email' => 'required|email|max:255',
 
             'company.nama_perusahaan' => 'required|string|max:255',
             'company.sector_id' => 'required|exists:industrial_sectors,id',

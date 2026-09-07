@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\Attachment;
 use App\Models\Company;
 use App\Models\CompanySize;
 use App\Models\Complainant;
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
 use App\Models\User;
+use Database\Seeders\CompanySizeSeeder;
 use Database\Seeders\IndustrialSectorSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -21,24 +23,74 @@ class ComplaintStoreTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(IndustrialSectorSeeder::class);
+        $this->seed([
+            IndustrialSectorSeeder::class,
+            CompanySizeSeeder::class,
+        ]);
     }
 
     private function payload(array $overrides = []): array
     {
-        return array_merge([
+        return array_replace_recursive([
             'category_id' => 1,
             'description' => 'Perusahaan tidak membayar upah sejak bulan Juli padahal sudah ditagih berkali-kali.',
             'complainant' => [
                 'nama_lengkap' => 'Budi Santoso', 'nik' => '3201010101010001', 'alamat' => 'Jl. A No.1',
                 'jenis_kelamin' => 'laki-laki', 'jabatan' => 'Pekerja', 'no_telp' => '081234567890',
+                'email' => 'budi@example.com',
             ],
             'company' => [
                 'nama_perusahaan' => 'PT Maju Bersama', 'sector_id' => 1, 'alamat' => 'Jl. B',
                 'jumlah_naker' => 120, 'provinsi' => 'Jawa Barat', 'kota_kab' => 'Bekasi',
-                'kecamatan' => 'Cikarang', 'kelurahan' => 'Waluya',
+                'kecamatan' => 'Cikarang', 'kelurahan' => 'Waluya', 'no_telp' => '0211234567',
+                'email' => 'company@example.com',
             ],
         ], $overrides);
+    }
+
+    public function test_complaint_relations_use_existing_foreign_keys(): void
+    {
+        $complaint = new Complaint;
+
+        $this->assertSame('complainant_id', $complaint->complainant()->getForeignKeyName());
+        $this->assertSame('company_id', $complaint->company()->getForeignKeyName());
+        $this->assertSame('category_id', $complaint->category()->getForeignKeyName());
+        $this->assertSame('complaint_id', $complaint->attachments()->getForeignKeyName());
+        $this->assertSame('complaint_id', (new Attachment)->complaint()->getForeignKeyName());
+    }
+
+    public function test_employee_count_automatically_sets_company_size(): void
+    {
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        foreach ([
+            1 => 'MICRO',
+            4 => 'MICRO',
+            5 => 'SMALL',
+            19 => 'SMALL',
+            20 => 'MEDIUM',
+            99 => 'MEDIUM',
+            100 => 'LARGE',
+        ] as $employeeCount => $expectedSizeCode) {
+            $response = $this->postJson('/api/complaints', $this->payload([
+                'complainant' => [
+                    'nik' => str_pad((string) $employeeCount, 16, '0', STR_PAD_LEFT),
+                ],
+                'company' => [
+                    'nama_perusahaan' => "PT {$employeeCount}",
+                    'jumlah_naker' => $employeeCount,
+                ],
+            ]));
+
+            $response->assertCreated()
+                ->assertJsonPath('data.company.size.size_code', $expectedSizeCode);
+
+            $this->assertDatabaseHas('companies', [
+                'nama_perusahaan' => "PT {$employeeCount}",
+                'jumlah_naker' => $employeeCount,
+                'size_id' => CompanySize::where('size_code', $expectedSizeCode)->value('id'),
+            ]);
+        }
     }
 
     public function test_single_manual_post_creates_complaint_with_photos(): void
@@ -77,6 +129,7 @@ class ComplaintStoreTest extends TestCase
                 'jenis_kelamin' => 'perempuan',
                 'jabatan' => 'Operator',
                 'no_telp' => '081234567891',
+                'email' => 'siti@example.com',
             ],
             'company' => [
                 'nama_perusahaan' => 'PT Sejahtera',
@@ -87,19 +140,20 @@ class ComplaintStoreTest extends TestCase
                 'kota_kab' => 'Bekasi',
                 'kecamatan' => 'Cikarang',
                 'kelurahan' => 'Waluya',
+                'no_telp' => '0217654321',
+                'email' => 'sejahtera@example.com',
             ],
         ]);
 
         $response->assertCreated()
             ->assertJsonMissingPath('data.title')
-            ->assertJsonPath('data.priority', 'MEDIUM')
+            ->assertJsonMissingPath('data.priority')
             ->assertJsonPath('data.category.id', 1)
             ->assertJsonPath('data.category.category_name', 'Upah Kerja')
             ->assertJsonPath('data.company.sector.id', 1)
             ->assertJsonPath('data.company.sector.sector_code', 'AGRICULTURE');
 
         $this->assertDatabaseHas('complaints', [
-            'priority' => 'MEDIUM',
             'category_id' => 1,
         ]);
     }
@@ -149,9 +203,9 @@ class ComplaintStoreTest extends TestCase
         }
 
         $complaints = Complaint::orderBy('id')->get();
-        $complaints[0]->update(['complaint_date' => '2026-08-27', 'status' => 'DIPROSES']);
-        $complaints[1]->update(['complaint_date' => '2026-08-15', 'status' => 'SELESAI']);
-        $complaints[2]->update(['complaint_date' => '2026-07-02', 'status' => 'DIPROSES']);
+        $complaints[0]->update(['complaint_date' => '2026-08-27']);
+        $complaints[1]->update(['complaint_date' => '2026-08-15']);
+        $complaints[2]->update(['complaint_date' => '2026-07-02']);
 
         $this->actingAs($user)
             ->getJson('/api/complaints?search=Alpha&month=8&year=2026&per_page=10')
@@ -161,7 +215,7 @@ class ComplaintStoreTest extends TestCase
             ->assertJsonPath('meta.total', 1);
 
         $this->actingAs($user)
-            ->getJson('/api/complaints?category_id=2&status=SELESAI&month=8&year=2026')
+            ->getJson('/api/complaints?category_id=2&month=8&year=2026')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.complainant.nama_lengkap', 'Siti Beta');
@@ -280,25 +334,21 @@ class ComplaintStoreTest extends TestCase
         ]);
         ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
         ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
-        CompanySize::create(['size_code' => 'MICRO', 'size_name' => 'Mikro', 'min_employees' => 1, 'max_employees' => 4]);
-        CompanySize::create(['size_code' => 'LARGE', 'size_name' => 'Besar', 'min_employees' => 100, 'max_employees' => null]);
 
         $this->postJson('/api/complaints', $this->payload())->assertCreated();
         $this->postJson('/api/complaints', $this->payload(['category_id' => 2]))->assertCreated();
-        $complaint = Complaint::latest('id')->firstOrFail();
-        $complaint->update(['status' => 'SELESAI']);
 
         $response = $this->actingAs($user)->getJson('/api/dashboard/statistics?period=today');
 
         $response->assertOk()
             ->assertJsonPath('data.total_complaints', 2)
-            ->assertJsonPath('data.completed_complaints', 1)
+            ->assertJsonMissingPath('data.completed_complaints')
             ->assertJsonPath('data.satisfaction_index', null)
             ->assertJsonPath('data.satisfaction_responses', 0)
             ->assertJsonPath('data.by_company_size.0.size_code', 'MICRO')
             ->assertJsonPath('data.by_company_size.0.count', 0)
-            ->assertJsonPath('data.by_company_size.1.size_code', 'LARGE')
-            ->assertJsonPath('data.by_company_size.1.count', 2)
+            ->assertJsonPath('data.by_company_size.3.size_code', 'LARGE')
+            ->assertJsonPath('data.by_company_size.3.count', 2)
             ->assertJsonPath('data.by_category.0.count', 1)
             ->assertJsonPath('data.by_category.1.count', 1)
             ->assertJsonPath('meta.period', 'today');
@@ -335,13 +385,10 @@ class ComplaintStoreTest extends TestCase
         $this->assertStringContainsString('/Count 2', $response->getContent());
     }
 
-    public function test_unauthenticated_returns_json_401(): void
+    public function test_complaint_endpoints_are_public(): void
     {
-        $this->getJson('/api/complaints')
-            ->assertStatus(401)
-            ->assertJson(['message' => 'Unauthenticated. Token tidak valid.']);
-
-        $this->getJson('/api/dashboard/complaint-summary')->assertStatus(401);
+        $this->getJson('/api/complaints')->assertOk();
+        $this->getJson('/api/dashboard/complaint-summary')->assertOk();
     }
 
     public function test_wilayah_and_submit_work_without_login(): void
@@ -355,33 +402,40 @@ class ComplaintStoreTest extends TestCase
 
         $this->assertSame(1, Complaint::count());
 
-        $this->getJson('/api/complaints')->assertStatus(401);
+        $this->getJson('/api/complaints')->assertOk();
     }
 
-    public function test_status_change_creates_tracking_log(): void
+    public function test_description_can_be_updated(): void
     {
-        $user = User::create([
-            'username' => 'tester', 'email' => 'tester@mail.com',
-            'password' => bcrypt('password'), 'role' => 'admin',
-        ]);
-        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Kesehatan & Keselamatan Kerja']);
+        $this->postJson('/api/complaints', $this->payload())->assertCreated();
+        $complaint = Complaint::firstOrFail();
 
-        $this->actingAs($user)->postJson('/api/complaints', $this->payload());
-        $id = Complaint::first()->id;
+        $this->putJson("/api/complaints/{$complaint->id}", [
+            'description' => 'Perusahaan sudah membayar seluruh upah pekerja.',
+        ])->assertOk();
 
-        $response = $this->actingAs($user)->putJson("/api/complaints/$id", [
-            'status' => 'SELESAI',
-            'notes' => 'Upah sudah dibayar lunas',
-        ]);
-
-        $response->assertOk()->assertJsonCount(1, 'data.updates');
-        $this->assertSame('SELESAI', Complaint::first()->status);
-        $this->assertSame('DIPROSES', Complaint::first()->updates()->first()->old_status);
-        $this->assertSame('SELESAI', Complaint::first()->updates()->first()->new_status);
-
-        $this->actingAs($user)->putJson("/api/complaints/$id", [
+        $this->assertDatabaseHas('complaints', [
+            'id' => $complaint->id,
             'description' => 'Perusahaan sudah membayar seluruh upah pekerja.',
         ]);
-        $this->assertSame(1, Complaint::first()->updates()->count());
+    }
+
+    public function test_deleting_complaint_sets_is_deleted_and_hides_it(): void
+    {
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Kesehatan & Keselamatan Kerja']);
+        $this->postJson('/api/complaints', $this->payload())->assertCreated();
+        $complaint = Complaint::firstOrFail();
+
+        $this->deleteJson("/api/complaints/{$complaint->id}")
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('complaints', [
+            'id' => $complaint->id,
+            'is_deleted' => true,
+        ]);
+        $this->assertSame(0, Complaint::count());
+        $this->assertSame(1, Complaint::withoutGlobalScope('active')->count());
     }
 }
