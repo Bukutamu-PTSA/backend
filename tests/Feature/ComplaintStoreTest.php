@@ -326,6 +326,129 @@ class ComplaintStoreTest extends TestCase
             ->assertJsonValidationErrors(['period']);
     }
 
+    public function test_dashboard_province_summary_counts_complaints_and_filters_today(): void
+    {
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+
+        $this->postJson('/api/complaints', $this->payload())->assertCreated();
+        $this->postJson('/api/complaints', $this->payload([
+            'complainant' => [
+                'nama_lengkap' => 'Siti Aminah', 'nik' => '3201010101010002', 'alamat' => 'Jl. C',
+                'jenis_kelamin' => 'perempuan', 'jabatan' => 'Operator', 'no_telp' => '081234567891',
+            ],
+            'company' => [
+                'nama_perusahaan' => 'PT Jakarta', 'sector_id' => 1, 'alamat' => 'Jl. D',
+                'jumlah_naker' => 20, 'provinsi' => 'DKI Jakarta', 'kota_kab' => 'Jakarta Utara',
+                'kecamatan' => 'Koja', 'kelurahan' => 'Lagoa',
+            ],
+        ]))->assertCreated();
+        $this->postJson('/api/complaints', $this->payload())->assertCreated();
+
+        $complaints = Complaint::orderBy('id')->get();
+        $complaints[0]->update(['complaint_date' => now()]);
+        $complaints[1]->update(['complaint_date' => now()]);
+        $complaints[2]->update(['complaint_date' => now()->subDay()]);
+
+        $this->getJson('/api/dashboard/province-summary')
+            ->assertOk()
+            ->assertJsonPath('meta.period', 'all')
+            ->assertJsonPath('meta.total_complaints', 3)
+            ->assertJsonPath('meta.total_rows', 2)
+            ->assertJsonPath('data.0.provinsi', 'Jawa Barat')
+            ->assertJsonPath('data.0.count', 2)
+            ->assertJsonPath('data.1.provinsi', 'DKI Jakarta')
+            ->assertJsonPath('data.1.count', 1);
+
+        $this->getJson('/api/dashboard/province-summary?period=today')
+            ->assertOk()
+            ->assertJsonPath('meta.period', 'today')
+            ->assertJsonPath('meta.total_complaints', 2)
+            ->assertJsonPath('meta.total_rows', 2)
+            ->assertJsonPath('data.0.count', 1)
+            ->assertJsonPath('data.1.count', 1);
+    }
+
+    public function test_province_summary_supports_limit_search_pagination_and_category_matrix(): void
+    {
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Keselamatan Kerja']);
+
+        $provinceComplaints = [
+            ['Jawa Barat', 1, 4],
+            ['Jawa Timur', 1, 2],
+            ['Jawa Tengah', 2, 3],
+            ['Bali', 1, 1],
+        ];
+
+        $nik = 1;
+        foreach ($provinceComplaints as [$provinsi, $categoryId, $count]) {
+            for ($i = 0; $i < $count; $i++) {
+                $this->postJson('/api/complaints', $this->payload([
+                    'category_id' => $categoryId,
+                    'complainant' => [
+                        'nama_lengkap' => "Pelapor {$provinsi} {$i}",
+                        'nik' => str_pad((string) $nik++, 16, '0', STR_PAD_LEFT),
+                        'alamat' => 'Jl. Uji', 'jenis_kelamin' => 'laki-laki',
+                        'jabatan' => 'Staf', 'no_telp' => '081200000000',
+                    ],
+                    'company' => [
+                        'nama_perusahaan' => "PT {$provinsi} {$i}", 'sector_id' => 1, 'alamat' => 'Jl. Co',
+                        'jumlah_naker' => 10, 'provinsi' => $provinsi, 'kota_kab' => 'Kota',
+                        'kecamatan' => 'Kec', 'kelurahan' => 'Kel',
+                    ],
+                ]))->assertCreated();
+            }
+        }
+
+        $this->getJson('/api/dashboard/province-summary?limit=2')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.limit', 2)
+            ->assertJsonPath('meta.total_rows', 4)
+            ->assertJsonPath('meta.total_complaints', 10)
+            ->assertJsonPath('data.0.provinsi', 'Jawa Barat')
+            ->assertJsonPath('data.0.count', 4)
+            ->assertJsonPath('data.1.provinsi', 'Jawa Tengah')
+            ->assertJsonPath('data.1.count', 3);
+
+        $this->getJson('/api/dashboard/province-summary?search=jawa&sort=provinsi&direction=asc')
+            ->assertOk()
+            ->assertJsonCount(3, 'data')
+            ->assertJsonPath('meta.total_rows', 3)
+            ->assertJsonPath('data.0.provinsi', 'Jawa Barat')
+            ->assertJsonPath('data.1.provinsi', 'Jawa Tengah')
+            ->assertJsonPath('data.2.provinsi', 'Jawa Timur');
+
+        $this->getJson('/api/dashboard/province-summary?per_page=2&page=2&sort=provinsi&direction=asc')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.page', 2)
+            ->assertJsonPath('meta.per_page', 2)
+            ->assertJsonPath('meta.last_page', 2)
+            ->assertJsonPath('data.0.provinsi', 'Jawa Tengah')
+            ->assertJsonPath('data.1.provinsi', 'Jawa Timur');
+
+        $this->getJson('/api/dashboard/province-summary?with_categories=1&sort=provinsi&direction=asc')
+            ->assertOk()
+            ->assertJsonPath('categories.0.code', 'UPAH_KERJA')
+            ->assertJsonPath('categories.1.code', 'K3')
+            ->assertJsonPath('data.0.provinsi', 'Bali')
+            ->assertJsonPath('data.0.category_counts.UPAH_KERJA', 1)
+            ->assertJsonPath('data.0.category_counts.K3', 0)
+            ->assertJsonPath('data.2.provinsi', 'Jawa Tengah')
+            ->assertJsonPath('data.2.category_counts.UPAH_KERJA', 0)
+            ->assertJsonPath('data.2.category_counts.K3', 3);
+
+        $this->getJson('/api/dashboard/province-summary?sort=category&category_id=2&direction=desc')
+            ->assertOk()
+            ->assertJsonPath('data.0.provinsi', 'Jawa Tengah')
+            ->assertJsonPath('data.0.count', 3);
+
+        $this->getJson('/api/dashboard/province-summary?sort=category')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['category_id']);
+    }
+
     public function test_dashboard_statistics_returns_cards_and_chart_data(): void
     {
         $user = User::create([
@@ -418,6 +541,59 @@ class ComplaintStoreTest extends TestCase
         $this->assertDatabaseHas('complaints', [
             'id' => $complaint->id,
             'description' => 'Perusahaan sudah membayar seluruh upah pekerja.',
+        ]);
+    }
+
+    public function test_complaint_update_changes_related_complainant_and_company_data(): void
+    {
+        ComplaintCategory::create(['category_code' => 'K3', 'category_name' => 'Kesehatan & Keselamatan Kerja']);
+        $this->postJson('/api/complaints', $this->payload())->assertCreated();
+        $complaint = Complaint::firstOrFail();
+
+        $response = $this->putJson("/api/complaints/{$complaint->id}", [
+            'description' => 'Perusahaan sudah memperbaiki seluruh kendala pelaporan WLKP.',
+            'complainant' => [
+                'nama_lengkap' => 'Siti Aminah',
+                'nik' => '3201010101010002',
+                'alamat' => 'Jl. Baru No. 2',
+                'jenis_kelamin' => 'perempuan',
+                'jabatan' => 'Supervisor',
+                'no_telp' => '081234567891',
+                'email' => 'siti@example.com',
+            ],
+            'company' => [
+                'nama_perusahaan' => 'PT Sejahtera',
+                'sector_id' => 2,
+                'alamat' => 'Jl. Industri No. 2',
+                'jumlah_naker' => 25,
+                'provinsi' => 'Jawa Barat',
+                'kota_kab' => 'Bekasi',
+                'kecamatan' => 'Cikarang',
+                'kelurahan' => 'Waluya',
+                'no_telp' => '0217654321',
+                'email' => 'sejahtera@example.com',
+            ],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.complainant.nama_lengkap', 'Siti Aminah')
+            ->assertJsonPath('data.company.nama_perusahaan', 'PT Sejahtera')
+            ->assertJsonPath('data.description', 'Perusahaan sudah memperbaiki seluruh kendala pelaporan WLKP.');
+        $this->assertDatabaseHas('complainants', [
+            'id' => $complaint->complainant_id,
+            'nama_lengkap' => 'Siti Aminah',
+            'nik' => '3201010101010002',
+        ]);
+        $this->assertDatabaseHas('companies', [
+            'id' => $complaint->company_id,
+            'nama_perusahaan' => 'PT Sejahtera',
+            'sector_id' => 2,
+            'jumlah_naker' => 25,
+            'size_id' => CompanySize::where('size_code', 'MEDIUM')->value('id'),
+        ]);
+        $this->assertDatabaseHas('complaints', [
+            'id' => $complaint->id,
+            'description' => 'Perusahaan sudah memperbaiki seluruh kendala pelaporan WLKP.',
         ]);
     }
 

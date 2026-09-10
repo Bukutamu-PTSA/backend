@@ -56,6 +56,128 @@ class ComplaintController extends Controller
         ]);
     }
 
+    public function provinceSummary(Request $request)
+    {
+        $filters = $request->validate([
+            'period' => 'nullable|in:today',
+            'search' => 'nullable|string|max:255',
+            'sort' => 'nullable|in:provinsi,total,category',
+            'direction' => 'nullable|in:asc,desc',
+            'category_id' => 'nullable|required_if:sort,category|integer|exists:complaint_categories,id',
+            'with_categories' => 'nullable|boolean',
+            'limit' => 'nullable|integer|between:1,100',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|between:1,100',
+        ]);
+
+        $period = $filters['period'] ?? null;
+        $withCategories = $request->boolean('with_categories');
+        $sort = $filters['sort'] ?? 'total';
+        $direction = $filters['direction'] ?? 'desc';
+        $categoryIds = $withCategories ? ComplaintCategory::query()->orderBy('id')->pluck('id') : collect();
+
+        if ($sort === 'category') {
+            $categoryIds = $categoryIds->push($filters['category_id'])->unique()->values();
+        }
+
+        $baseQuery = Complaint::query()
+            ->join('companies', 'companies.id', '=', 'complaints.company_id')
+            ->when($period === 'today', fn ($query) => $query->whereDate('complaint_date', today()))
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $query->whereRaw('LOWER(companies.provinsi) LIKE ?', ['%'.mb_strtolower($search).'%']);
+            });
+
+        $totalComplaints = (clone $baseQuery)->count('complaints.id');
+        $provinceQuery = (clone $baseQuery)
+            ->select('companies.provinsi')
+            ->selectRaw('COUNT(complaints.id) AS count');
+
+        $categoryAliases = [];
+        foreach ($categoryIds as $categoryId) {
+            $categoryAliases[$categoryId] = 'category_'.$categoryId;
+        }
+
+        if ($categoryAliases !== []) {
+            $provinceQuery->selectRaw(
+                collect($categoryAliases)
+                    ->map(fn (string $alias) => 'SUM(CASE WHEN complaints.category_id = ? THEN 1 ELSE 0 END) AS '.$alias)
+                    ->implode(', '),
+                array_keys($categoryAliases)
+            );
+        }
+
+        $provinceQuery->groupBy('companies.provinsi');
+
+        $totalRows = (clone $baseQuery)->distinct()->count('companies.provinsi');
+
+        if ($sort === 'provinsi') {
+            $provinceQuery->orderBy('companies.provinsi', $direction);
+        } elseif ($sort === 'category') {
+            $provinceQuery->orderBy($categoryAliases[$filters['category_id']], $direction);
+        } else {
+            $provinceQuery->orderBy('count', $direction);
+        }
+        $provinceQuery->orderBy('companies.provinsi');
+
+        $paginationRequested = array_key_exists('page', $filters) || array_key_exists('per_page', $filters);
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : null;
+        $page = null;
+        $perPage = null;
+
+        if ($limit !== null) {
+            $rows = $provinceQuery->limit($limit)->get();
+        } elseif ($paginationRequested) {
+            $perPage = isset($filters['per_page']) ? (int) $filters['per_page'] : 15;
+            $paginator = $provinceQuery->paginate($perPage)->withQueryString();
+            $rows = $paginator->getCollection();
+            $page = $paginator->currentPage();
+        } else {
+            $rows = $provinceQuery->get();
+        }
+
+        $categories = $withCategories
+            ? ComplaintCategory::query()->orderBy('id')->get(['id', 'category_code', 'category_name'])
+            : collect();
+
+        $data = $rows->map(function ($province) use ($withCategories, $categories, $categoryAliases) {
+            $row = [
+                'provinsi' => $province->provinsi,
+                'count' => (int) $province->count,
+            ];
+
+            if ($withCategories) {
+                $row['category_counts'] = $categories->mapWithKeys(fn (ComplaintCategory $category) => [
+                    $category->category_code => (int) $province->{$categoryAliases[$category->id]},
+                ]);
+            }
+
+            return $row;
+        })->values();
+
+        return response()->json([
+            'data' => $data,
+            'categories' => $withCategories ? $categories->map(fn (ComplaintCategory $category) => [
+                'id' => $category->id,
+                'code' => $category->category_code,
+                'name' => $category->category_name,
+            ])->values() : null,
+            'meta' => [
+                'period' => $period ?? 'all',
+                'total' => $totalComplaints,
+                'total_complaints' => $totalComplaints,
+                'total_rows' => $totalRows,
+                'returned_rows' => $data->count(),
+                'search' => $filters['search'] ?? null,
+                'sort' => $sort,
+                'direction' => $direction,
+                'limit' => $limit,
+                'page' => $page,
+                'per_page' => $perPage,
+                'last_page' => $perPage === null ? null : (int) ceil($totalRows / $perPage),
+            ],
+        ]);
+    }
+
     public function statistics(Request $request)
     {
         $period = $request->validate([
@@ -164,13 +286,7 @@ class ComplaintController extends Controller
                 $validated['complainant']
             );
 
-            $employeeCount = $validated['company']['jumlah_naker'];
-            $companySize = CompanySize::query()
-                ->where('min_employees', '<=', $employeeCount)
-                ->where(fn ($query) => $query
-                    ->whereNull('max_employees')
-                    ->orWhere('max_employees', '>=', $employeeCount))
-                ->firstOrFail();
+            $companySize = $this->companySizeFor($validated['company']['jumlah_naker']);
 
             $company = Company::updateOrCreate(
                 [
@@ -365,9 +481,25 @@ class ComplaintController extends Controller
 
     public function update(UpdateComplaintRequest $request, Complaint $complaint)
     {
-        $complaint->update($request->validated());
+        DB::transaction(function () use ($request, $complaint) {
+            $validated = $request->validated();
 
-        return new ComplaintResource($complaint->load(['complainant', 'company.sector', 'company.size', 'category', 'attachments']));
+            $complaint->update(array_intersect_key($validated, array_flip(['category_id', 'description'])));
+
+            if ($complainantData = $validated['complainant'] ?? null) {
+                $complaint->complainant->update($complainantData);
+            }
+
+            if ($companyData = $validated['company'] ?? null) {
+                if (isset($companyData['jumlah_naker'])) {
+                    $companyData['size_id'] = $this->companySizeFor($companyData['jumlah_naker'])->id;
+                }
+
+                $complaint->company->update($companyData);
+            }
+        });
+
+        return new ComplaintResource($complaint->fresh()->load(['complainant', 'company.sector', 'company.size', 'category', 'attachments']));
     }
 
     public function destroy(Complaint $complaint)
@@ -375,6 +507,16 @@ class ComplaintController extends Controller
         $complaint->update(['is_deleted' => true]);
 
         return response()->json(['success' => true, 'message' => 'Aduan dihapus']);
+    }
+
+    private function companySizeFor(int $employeeCount): CompanySize
+    {
+        return CompanySize::query()
+            ->where('min_employees', '<=', $employeeCount)
+            ->where(fn ($query) => $query
+                ->whereNull('max_employees')
+                ->orWhere('max_employees', '>=', $employeeCount))
+            ->firstOrFail();
     }
 
     private function nextTicketNumber(): string

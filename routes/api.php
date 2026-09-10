@@ -17,6 +17,7 @@ Route::get('industrial-sectors', fn () => IndustrialSector::orderBy('id')->get([
 
 Route::post('complaints', [ComplaintController::class, 'store']);
 Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
+Route::get('dashboard/province-summary', [ComplaintController::class, 'provinceSummary']);
 Route::get('dashboard/statistics', [ComplaintController::class, 'statistics']);
 Route::get('complaints/{complaint}/pdf', [ComplaintController::class, 'pdf']);
 Route::apiResource('complaints', ComplaintController::class)->except('store');
