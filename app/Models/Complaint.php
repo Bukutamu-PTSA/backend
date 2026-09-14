@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\UploadedFile;
 
 class Complaint extends Model
 {
@@ -16,28 +17,28 @@ class Complaint extends Model
         'complainant_id',
         'company_id',
         'category_id',
-        'assigned_to',
         'ticket_number',
-        'title',
         'description',
-        'status',
-        'priority',
-        'follow_up_date',
-        'internal_notes',
+        'is_deleted',
         'complaint_date',
     ];
 
     protected $casts = [
+        'is_deleted' => 'boolean',
         'complaint_date' => 'datetime',
-        'follow_up_date' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('active', fn (Builder $builder) => $builder->where('is_deleted', false));
+    }
 
     /**
      * Relasi ke data pelapor (complainant).
      */
     public function complainant(): BelongsTo
     {
-        return $this->belongsTo(Complainant::class);
+        return $this->belongsTo(Complainant::class, 'complainant_id');
     }
 
     /**
@@ -45,7 +46,7 @@ class Complaint extends Model
      */
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     /**
@@ -57,19 +58,11 @@ class Complaint extends Model
     }
 
     /**
-     * Relasi ke profil admin/petugas yang menangani tiket.
-     */
-    public function assignedAdmin(): BelongsTo
-    {
-        return $this->belongsTo(AdminProfile::class, 'assigned_to');
-    }
-
-    /**
      * Relasi ke berkas/file bukti pendukung.
      */
     public function attachments(): HasMany
     {
-        return $this->hasMany(Attachment::class);
+        return $this->hasMany(Attachment::class, 'complaint_id');
     }
 
     /**
@@ -81,14 +74,6 @@ class Complaint extends Model
     }
 
     /**
-     * Relasi ke riwayat log/perubahan status aduan.
-     */
-    public function updates(): HasMany
-    {
-        return $this->hasMany(Update::class);
-    }
-
-    /**
      * Relasi ke notifikasi terkait aduan ini.
      */
     public function notifications(): HasMany
@@ -96,12 +81,15 @@ class Complaint extends Model
         return $this->hasMany(Notification::class);
     }
 
-    /**
-     * Local Scope: Filter berdasarkan status aduan.
-     */
-    public function scopeByStatus(Builder $query, string $status): Builder
+    public function addPhoto(UploadedFile $file): Attachment
     {
-        return $query->where('status', $status);
+        return $this->attachments()->create([
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $file->store('complaints/'.$this->id, 'public'),
+            'file_type' => 'photo',
+            'file_size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+        ]);
     }
 
     /**

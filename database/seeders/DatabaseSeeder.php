@@ -14,8 +14,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             ComplaintCategorySeeder::class,
+            IndustrialSectorSeeder::class,
             CompanySizeSeeder::class,
             AttachmentCategorySeeder::class,
+            \Laravolt\Indonesia\Seeds\DatabaseSeeder::class,
         ]);
     }
 }
