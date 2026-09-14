@@ -8,11 +8,14 @@ use App\Http\Controllers\Api\ComplainantController;
 use App\Http\Controllers\Api\ComplaintCategoryController;
 use App\Http\Controllers\Api\ComplaintController;
 use App\Http\Controllers\Api\ComplaintTypeController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\IndustrySectorController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ServiceCategoryController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\WilayahController;
 use App\Models\IndustrialSector;
 use Illuminate\Support\Facades\Route;
@@ -26,11 +29,19 @@ Route::prefix('v1')->group(function () {
     Route::get('/faqs', [FaqController::class, 'index']);
     Route::get('/faqs/{faq}', [FaqController::class, 'show']);
 
+    // Survei Kepuasan Publik (ambil pertanyaan aktif & submit jawaban)
+    Route::get('/surveys/questions', [SurveyController::class, 'questions']);
+    Route::post('/surveys', [SurveyController::class, 'store']);
+
     //  Protected Routes (Wajib Login / Bearer Token)
     Route::middleware('auth:sanctum')->group(function () {
         // Auth User & Logout
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+        // Notifikasi milik user yang sedang login
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
         // Master Data (Read untuk User/Pelapor/Admin)
         Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
@@ -87,6 +98,11 @@ Route::prefix('v1')->group(function () {
             Route::put('/admin/faqs/{faq}', [FaqController::class, 'update']);
             Route::patch('/admin/faqs/{faq}/approve', [FaqController::class, 'approve']);
             Route::delete('/admin/faqs/{faq}', [FaqController::class, 'destroy']);
+
+            // Dashboard analitik & ekspor laporan (CSV/PDF)
+            Route::get('/admin/dashboard/overview', [DashboardController::class, 'overview']);
+            Route::get('/admin/reports/export/csv', [DashboardController::class, 'exportCsv']);
+            Route::get('/admin/reports/export/pdf', [DashboardController::class, 'exportPdf']);
         });
     });
 });

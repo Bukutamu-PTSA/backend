@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Attachment;
+use App\Models\Complaint;
+use App\Models\User;
+use App\Observers\AuditLogObserver;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +26,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Audit trail otomatis (ACTIVITY_LOG) untuk entitas inti.
+        Complaint::observe(AuditLogObserver::class);
+        User::observe(AuditLogObserver::class);
+        Attachment::observe(AuditLogObserver::class);
+
         Event::listen(RequestHandled::class, function (RequestHandled $event): void {
             $request = $event->request;
 
