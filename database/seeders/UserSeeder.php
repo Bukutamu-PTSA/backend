@@ -15,8 +15,10 @@ class UserSeeder extends Seeder
             ['email' => 'superadmin@ptsa.go.id'],
             [
                 'username' => 'superadmin',
+                'full_name' => 'Super Administrator PTSA',
                 'password' => Hash::make('password123'),
                 'role' => 'super_admin',
+                'status' => 'aktif',
             ],
         );
 
@@ -34,8 +36,10 @@ class UserSeeder extends Seeder
             ['email' => 'petugas1@ptsa.go.id'],
             [
                 'username' => 'petugas1',
+                'full_name' => 'Ahmad Fauzi, S.H.',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
+                'status' => 'aktif',
             ],
         );
 

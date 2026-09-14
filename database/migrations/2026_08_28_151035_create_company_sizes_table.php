@@ -15,8 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('size_code')->unique();
             $table->string('size_name');
+            $table->text('description')->nullable();
             $table->unsignedInteger('min_employees');
             $table->unsignedInteger('max_employees')->nullable();
+            $table->decimal('range_start', 12, 2)->nullable();
+            $table->decimal('range_end', 12, 2)->nullable();
             $table->timestamps();
         });
     }

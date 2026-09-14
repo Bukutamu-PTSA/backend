@@ -15,10 +15,15 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreignId('complaint_id')->nullable()->constrained('complaints')->cascadeOnDelete();
+            $table->string('type')->nullable();
             $table->string('title');
             $table->text('content');
             $table->boolean('is_read')->default(false);
+            $table->string('action_url')->nullable();
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
+
+            $table->index(['user_id', 'is_read']);
         });
     }
 

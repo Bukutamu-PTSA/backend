@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('sector_code')->unique();
             $table->string('sector_name');
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

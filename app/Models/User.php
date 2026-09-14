@@ -20,9 +20,12 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'username',
+        'full_name',
         'email',
         'password',
         'role',
+        'status',
+        'last_login',
     ];
 
     /**
@@ -44,6 +47,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -62,6 +66,30 @@ class User extends Authenticatable
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Relasi ke tiket pengaduan yang ditugaskan (assigned) ke user ini.
+     */
+    public function assignedComplaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class, 'assigned_to_user_id');
+    }
+
+    /**
+     * Relasi ke berkas bukti pendukung yang diunggah oleh user ini.
+     */
+    public function uploadedAttachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class, 'uploaded_by_user_id');
+    }
+
+    /**
+     * Relasi ke jejak audit (activity log) yang dilakukan user ini.
+     */
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 
     /**

@@ -14,12 +14,18 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('username')->unique(); // 👈 Pengganti name sesuai ERD PTSA
+            $table->string('full_name')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['super_admin', 'admin', 'pelapor'])->default('pelapor'); // 👈 Kolom role untuk RBAC
+            $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
+            $table->timestamp('last_login')->nullable();
             $table->rememberToken();
             $table->timestamps();
+
+            $table->index('email');
+            $table->index('role');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

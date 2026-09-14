@@ -13,11 +13,25 @@ return new class extends Migration
     {
         Schema::create('surveys', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('complaint_id')->constrained('complaints')->cascadeOnDelete();
+            // Opsional: tautan ke tiket pengaduan bila survei berasal dari layanan aduan.
+            $table->foreignId('complaint_id')->nullable()->constrained('complaints')->nullOnDelete();
             $table->foreignId('created_by_admin_id')->nullable()->constrained('admin_profiles')->nullOnDelete();
-            $table->enum('status', ['ACTIVE', 'CLOSED'])->default('ACTIVE');
+            $table->date('survey_date')->nullable();
+            $table->string('nama_petugas')->nullable();
+            $table->enum('komunikasi_petugas', ['baik', 'cukup', 'kurang'])->nullable();
+            $table->enum('penjelasan_materi', ['baik', 'cukup', 'kurang'])->nullable();
+            $table->enum('sarana_prasarana', ['baik', 'cukup', 'kurang'])->nullable();
+            $table->text('catatan')->nullable();
+            $table->unsignedTinyInteger('rating_overall')->nullable();
+            $table->boolean('is_anonymous')->default(false);
+            $table->string('respondent_email')->nullable();
+            $table->string('respondent_phone', 20)->nullable();
+            $table->enum('status', ['draft', 'submitted'])->default('draft');
             $table->timestamp('closed_at')->nullable();
             $table->timestamps();
+
+            $table->index('complaint_id');
+            $table->index('status');
         });
     }
 

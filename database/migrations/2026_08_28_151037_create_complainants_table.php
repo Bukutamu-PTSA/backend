@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('complainants', function (Blueprint $table) {
             $table->id();
             $table->string('nama_lengkap');
-            $table->string('nik', 16)->index();
+            $table->string('nik', 16)->unique();
             $table->text('alamat');
             $table->enum('jenis_kelamin', ['laki-laki', 'perempuan']);
             $table->string('jabatan');

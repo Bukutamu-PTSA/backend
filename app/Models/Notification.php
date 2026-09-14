@@ -13,13 +13,17 @@ class Notification extends Model
     protected $fillable = [
         'user_id',
         'complaint_id',
+        'type',
         'title',
         'content',
         'is_read',
+        'action_url',
+        'read_at',
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
+        'read_at' => 'datetime',
     ];
 
     /**

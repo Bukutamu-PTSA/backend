@@ -11,14 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Bank pertanyaan survei (DATA_SURVEI_QUESTION) yang berdiri sendiri.
         Schema::create('survey_questions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('survey_id')->constrained('surveys')->cascadeOnDelete();
-            $table->unsignedTinyInteger('question_number');
             $table->text('question_text');
-            $table->enum('type', ['likert', 'text'])->default('likert');
-            $table->json('options')->nullable();
+            $table->enum('answer_type', ['radio', 'multiple_choice', 'text_area'])->default('radio');
+            $table->string('option_a')->nullable();
+            $table->string('option_b')->nullable();
+            $table->string('option_c')->nullable();
+            $table->boolean('is_required')->default(true);
+            $table->unsignedSmallInteger('order_number')->default(0);
             $table->timestamps();
+
+            $table->index('order_number');
         });
     }
 

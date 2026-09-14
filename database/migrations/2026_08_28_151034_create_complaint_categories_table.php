@@ -15,6 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('category_code')->unique();
             $table->string('category_name');
+            $table->text('description')->nullable();
+            $table->string('icon')->nullable();
+            $table->string('color', 20)->nullable();
+            $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
         });
     }

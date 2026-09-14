@@ -16,17 +16,23 @@ class Company extends Model
         'sector_id',
         'size_id',
         'alamat',
-        'jumlah_naker',
         'provinsi',
         'kota_kab',
         'kecamatan',
         'kelurahan',
         'no_telp',
         'email',
+        'jumlah_naker',
+        'npwp',
+        'status',
+    ];
+
+    protected $casts = [
+        'jumlah_naker' => 'integer',
     ];
 
     /**
-     * Relasi ke daftar seluruh pengaduan yang melibatkan perusahaan ini.
+     * Relasi ke sektor industri perusahaan.
      */
     public function sector(): BelongsTo
     {

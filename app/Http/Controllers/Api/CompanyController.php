@@ -13,7 +13,7 @@ class CompanyController extends Controller
         $query = Company::with('size');
 
         if ($request->filled('search')) {
-            $query->where('nama_perusahaan', 'like', '%' . $request->search . '%');
+            $query->where('nama_perusahaan', 'like', '%'.$request->search.'%');
         }
 
         return response()->json([
@@ -26,10 +26,10 @@ class CompanyController extends Controller
     {
         $validated = $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
-            'sektor_industri' => 'required|string|max:100',
+            'sector_id' => 'nullable|exists:industrial_sectors,id',
             'alamat' => 'required|string',
             'jumlah_naker' => 'required|integer|min:1',
-            'size_id' => 'required|exists:company_sizes,id',
+            'size_id' => 'nullable|exists:company_sizes,id',
             'provinsi' => 'required|string',
             'kota_kab' => 'required|string',
             'kecamatan' => 'required|string',

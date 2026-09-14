@@ -20,7 +20,12 @@ return new class extends Migration
             $table->string('file_type', 20)->nullable();
             $table->unsignedBigInteger('file_size');
             $table->string('mime_type')->nullable();
+            $table->text('description')->nullable();
+            $table->foreignId('uploaded_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->boolean('is_verified')->default(false);
             $table->timestamps();
+
+            $table->index('complaint_id');
         });
     }
 

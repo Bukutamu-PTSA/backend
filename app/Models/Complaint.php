@@ -17,15 +17,23 @@ class Complaint extends Model
         'complainant_id',
         'company_id',
         'category_id',
+        'complaint_type_id',
+        'assigned_to_user_id',
         'ticket_number',
         'description',
+        'status',
+        'priority',
         'is_deleted',
         'complaint_date',
+        'deadline',
+        'closed_at',
     ];
 
     protected $casts = [
         'is_deleted' => 'boolean',
         'complaint_date' => 'datetime',
+        'deadline' => 'datetime',
+        'closed_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -58,11 +66,35 @@ class Complaint extends Model
     }
 
     /**
+     * Relasi ke jenis pengaduan (complaint type).
+     */
+    public function complaintType(): BelongsTo
+    {
+        return $this->belongsTo(ComplaintType::class, 'complaint_type_id');
+    }
+
+    /**
+     * Relasi ke petugas/admin yang ditugaskan menangani aduan.
+     */
+    public function assignedTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to_user_id');
+    }
+
+    /**
      * Relasi ke berkas/file bukti pendukung.
      */
     public function attachments(): HasMany
     {
         return $this->hasMany(Attachment::class, 'complaint_id');
+    }
+
+    /**
+     * Relasi ke riwayat perubahan status aduan.
+     */
+    public function updates(): HasMany
+    {
+        return $this->hasMany(Update::class, 'complaint_id');
     }
 
     /**

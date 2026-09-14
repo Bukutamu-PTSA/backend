@@ -13,8 +13,18 @@ class CompanySize extends Model
     protected $fillable = [
         'size_code',
         'size_name',
+        'description',
         'min_employees',
         'max_employees',
+        'range_start',
+        'range_end',
+    ];
+
+    protected $casts = [
+        'min_employees' => 'integer',
+        'max_employees' => 'integer',
+        'range_start' => 'decimal:2',
+        'range_end' => 'decimal:2',
     ];
 
     /**

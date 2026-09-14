@@ -13,6 +13,7 @@ class IndustrialSector extends Model
     protected $fillable = [
         'sector_code',
         'sector_name',
+        'description',
     ];
 
     public function companies(): HasMany
