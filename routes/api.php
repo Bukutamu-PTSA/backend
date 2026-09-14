@@ -45,7 +45,7 @@ Route::get('/districts/{city_code}', [WilayahController::class, 'getDistricts'])
 Route::get('/villages/{district_code}', [WilayahController::class, 'getVillages']);
 
 Route::apiResource('complaint-categories', ComplaintCategoryController::class);
-Route::get('industrial-sectors', fn () => IndustrialSector::orderBy('id')->get(['id', 'sector_code', 'sector_name']));
+Route::get('industrial-sectors', fn() => IndustrialSector::orderBy('id')->get(['id', 'sector_code', 'sector_name']));
 
 Route::post('complaints', [ComplaintController::class, 'store']);
 Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
