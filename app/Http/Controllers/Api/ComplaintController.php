@@ -497,7 +497,12 @@ class ComplaintController extends Controller
             $validated = $request->validated();
 
             $directFields = array_intersect_key($validated, array_flip([
-                'category_id', 'complaint_type_id', 'assigned_to_user_id', 'description', 'priority', 'deadline',
+                'category_id',
+                'complaint_type_id',
+                'assigned_to_user_id',
+                'description',
+                'priority',
+                'deadline',
             ]));
 
             // Perubahan status ditangani lewat service agar riwayat tercatat.
@@ -530,6 +535,58 @@ class ComplaintController extends Controller
         $complaint->update(['is_deleted' => true]);
 
         return response()->json(['success' => true, 'message' => 'Aduan dihapus']);
+    }
+
+    public function trackTicket(string $ticketNumber)
+    {
+        $complaint = Complaint::with(['company:id,nama_perusahaan', 'category:id,category_name', 'complaintType:id,type_name'])
+            ->where('ticket_number', $ticketNumber)
+            ->first();
+
+        if (! $complaint) {
+            return response()->json(['success' => false, 'message' => 'Nomor tiket tidak ditemukan.'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'ticket_number' => $complaint->ticket_number,
+                'status' => $complaint->status,
+                'priority' => $complaint->priority,
+                'complaint_date' => $complaint->complaint_date?->format('Y-m-d'),
+                'deadline' => $complaint->deadline?->format('Y-m-d'),
+                'perusahaan' => $complaint->company?->nama_perusahaan,
+                'kategori_pelayanan' => $complaint->category?->category_name,
+                'jenis_pengaduan' => $complaint->complaintType?->type_name,
+            ],
+        ]);
+    }
+
+    public function updateStatus(Request $request, Complaint $complaint)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:draft,submitted,reviewed,approved,resolved,closed',
+            'notes' => 'nullable|string',
+        ]);
+
+        $this->complaintService->changeStatus($complaint, $validated['status'], $validated['notes'] ?? null);
+
+        return (new ComplaintResource($complaint->fresh()->load($this->complaintRelations())))
+            ->additional(['success' => true, 'message' => 'Status pengaduan berhasil diperbarui'])
+            ->response();
+    }
+
+    public function assignOfficer(Request $request, Complaint $complaint)
+    {
+        $validated = $request->validate([
+            'assigned_to_user_id' => 'required|exists:users,id',
+        ]);
+
+        $complaint->update(['assigned_to_user_id' => $validated['assigned_to_user_id']]);
+
+        return (new ComplaintResource($complaint->fresh()->load($this->complaintRelations())))
+            ->additional(['success' => true, 'message' => 'Petugas berhasil ditugaskan'])
+            ->response();
     }
 
     private function companySizeFor(int $employeeCount): CompanySize

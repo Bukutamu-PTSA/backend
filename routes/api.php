@@ -21,19 +21,39 @@ use App\Models\IndustrialSector;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    // Public Routes (Auth)
-    Route::post('/auth/login', [AuthController::class, 'login']);
-    Route::post('/auth/register', [AuthController::class, 'register']);
+    /*
+    |--------------------------------------------------------------------------
+    | 🔓 PUBLIC ROUTES (PELAPOR / TAMU / PUBLIK) — tanpa login / token
+    |--------------------------------------------------------------------------
+    */
 
-    // FAQ Publik (hanya menampilkan yang berstatus published)
+    // Login petugas/pegawai internal PTSA (pelapor tidak perlu akun).
+    Route::post('/auth/login', [AuthController::class, 'login']);
+
+    // Submit pengaduan & pelacakan status oleh pelapor tamu.
+    Route::post('/complaints', [ComplaintController::class, 'store']);
+    Route::get('/complaints/track/{ticketNumber}', [ComplaintController::class, 'trackTicket']);
+
+    // Master data publik untuk mengisi dropdown formulir aduan.
+    Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
+    Route::get('/service-categories/{serviceCategory}', [ServiceCategoryController::class, 'show']);
+    Route::get('/complaint-types', [ComplaintTypeController::class, 'index']);
+    Route::get('/complaint-types/{complaintType}', [ComplaintTypeController::class, 'show']);
+    Route::get('/industry-sectors', [IndustrySectorController::class, 'index']);
+    Route::get('/company-sizes', [CompanySizeController::class, 'index']);
+    Route::get('/companies', [CompanyController::class, 'index']);
+
+    // Survei kepuasan layanan (publik) & FAQ publik.
+    Route::get('/surveys/questions', [SurveyController::class, 'questions']);
+    Route::post('/surveys', [SurveyController::class, 'store']);
     Route::get('/faqs', [FaqController::class, 'index']);
     Route::get('/faqs/{faq}', [FaqController::class, 'show']);
 
-    // Survei Kepuasan Publik (ambil pertanyaan aktif & submit jawaban)
-    Route::get('/surveys/questions', [SurveyController::class, 'questions']);
-    Route::post('/surveys', [SurveyController::class, 'store']);
-
-    //  Protected Routes (Wajib Login / Bearer Token)
+    /*
+    |--------------------------------------------------------------------------
+    | 🔒 INTERNAL ROUTES (PETUGAS, PENGAWAS, ADMIN) — wajib login / Bearer token
+    |--------------------------------------------------------------------------
+    */
     Route::middleware('auth:sanctum')->group(function () {
         // Auth User & Logout
         Route::get('/auth/me', [AuthController::class, 'me']);
@@ -43,19 +63,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
-        // Master Data (Read untuk User/Pelapor/Admin)
-        Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
-        Route::get('/service-categories/{serviceCategory}', [ServiceCategoryController::class, 'show']);
-        Route::get('/complaint-types', [ComplaintTypeController::class, 'index']);
-        Route::get('/complaint-types/{complaintType}', [ComplaintTypeController::class, 'show']);
-        Route::get('/industry-sectors', [IndustrySectorController::class, 'index']);
-        Route::get('/company-sizes', [CompanySizeController::class, 'index']);
+        // Manajemen Pengaduan (internal)
+        Route::get('/admin/complaints', [ComplaintController::class, 'index']);
+        Route::get('/admin/complaints/{complaint}', [ComplaintController::class, 'show']);
+        Route::patch('/admin/complaints/{complaint}/status', [ComplaintController::class, 'updateStatus']);
+        Route::post('/admin/complaints/{complaint}/assign', [ComplaintController::class, 'assignOfficer']);
 
-        // Perusahaan
-        Route::get('/companies', [CompanyController::class, 'index']);
+        // Perusahaan (tulis) & Pelapor (biodata, internal)
         Route::post('/companies', [CompanyController::class, 'store']);
-
-        // Pelapor (Biodata) — dibutuhkan sebelum pembuatan tiket aduan
         Route::get('/complainants', [ComplainantController::class, 'index']);
         Route::get('/complainants/{complainant}', [ComplainantController::class, 'show']);
         Route::post('/complainants', [ComplainantController::class, 'store']);
