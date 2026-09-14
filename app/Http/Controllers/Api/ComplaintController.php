@@ -14,6 +14,7 @@ use App\Models\ComplaintCategory;
 use App\Models\SurveyResponse;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -296,11 +297,10 @@ class ComplaintController extends Controller
                 [...$validated['company'], 'size_id' => $companySize->id]
             );
 
-            $complaint = Complaint::create([
+            $complaint = $this->createComplaintWithUniqueTicket([
                 'complainant_id' => $complainant->id,
                 'company_id' => $company->id,
                 'category_id' => $validated['category_id'],
-                'ticket_number' => $this->nextTicketNumber(),
                 'description' => $validated['description'],
                 'complaint_date' => $validated['complaint_date'] ?? now(),
             ]);
@@ -350,11 +350,15 @@ class ComplaintController extends Controller
         $photoAttachment = $complaint->attachments->firstWhere('file_type', 'photo');
         $photoHtml = '<div class="photo-placeholder"></div>';
         if ($photoAttachment) {
-            $path = $diskPath($photoAttachment->file_path); // <-- diganti dari ->url
-            if (Storage::disk('public')->exists($path)) {
-                $photoHtml = '<img class="photo" src="data:'.$field($photoAttachment->mime_type)
-                    .';base64,'.base64_encode(Storage::disk('public')->get($path))
-                    .'" alt="Foto Pemohon">';
+            $path = $diskPath($photoAttachment->file_path);
+            try {
+                if (Storage::disk('public')->exists($path)) {
+                    $photoHtml = '<img class="photo" src="data:'.$field($photoAttachment->mime_type)
+                        .';base64,'.base64_encode(Storage::disk('public')->get($path))
+                        .'" alt="Foto Pemohon">';
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Gagal membaca foto pemohon untuk aduan #{$complaint->id}: {$e->getMessage()}");
             }
         }
 
@@ -486,11 +490,11 @@ class ComplaintController extends Controller
 
             $complaint->update(array_intersect_key($validated, array_flip(['category_id', 'description'])));
 
-            if ($complainantData = $validated['complainant'] ?? null) {
+            if (($complainantData = $validated['complainant'] ?? null) && $complaint->complainant) {
                 $complaint->complainant->update($complainantData);
             }
 
-            if ($companyData = $validated['company'] ?? null) {
+            if (($companyData = $validated['company'] ?? null) && $complaint->company) {
                 if (isset($companyData['jumlah_naker'])) {
                     $companyData['size_id'] = $this->companySizeFor($companyData['jumlah_naker'])->id;
                 }
@@ -522,5 +526,20 @@ class ComplaintController extends Controller
     private function nextTicketNumber(): string
     {
         return 'TCK-'.strtoupper(uniqid());
+    }
+
+    private function createComplaintWithUniqueTicket(array $data, int $retries = 2): Complaint
+    {
+        for ($attempt = 1; $attempt <= $retries; $attempt++) {
+            try {
+                return Complaint::create([...$data, 'ticket_number' => $this->nextTicketNumber()]);
+            } catch (QueryException $e) {
+                if ($attempt === $retries) {
+                    throw $e;
+                }
+            }
+        }
+
+        throw new \RuntimeException('Gagal membuat nomor tiket aduan yang unik');
     }
 }

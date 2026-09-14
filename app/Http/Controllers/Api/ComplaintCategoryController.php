@@ -37,6 +37,8 @@ class ComplaintCategoryController extends Controller
     {
         return response()->json([
             'data' => $complaintCategory->only(['id', 'category_code', 'category_name']),
+            'success' => true,
+            'message' => 'Kategori aduan berhasil diambil',
         ]);
     }
 
