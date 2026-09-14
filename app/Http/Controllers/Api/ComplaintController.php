@@ -17,6 +17,7 @@ use Dompdf\Options;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ComplaintController extends Controller
@@ -358,7 +359,7 @@ class ComplaintController extends Controller
                         .'" alt="Foto Pemohon">';
                 }
             } catch (\Exception $e) {
-                \Log::warning("Gagal membaca foto pemohon untuk aduan #{$complaint->id}: {$e->getMessage()}");
+                Log::warning("Gagal membaca foto pemohon untuk aduan #{$complaint->id}: {$e->getMessage()}");
             }
         }
 

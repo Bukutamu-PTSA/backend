@@ -1,23 +1,17 @@
 <?php
 
-<<<<<<< HEAD
-=======
 use App\Http\Controllers\Api\AttachmentController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CompanyController;
+use App\Http\Controllers\Api\CompanySizeController;
 use App\Http\Controllers\Api\ComplaintCategoryController;
 use App\Http\Controllers\Api\ComplaintController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\WilayahController;
 use App\Models\IndustrialSector;
->>>>>>> form-pengaduan
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\{
-    AuthController,
-    CategoryController,
-    CompanySizeController,
-    CompanyController,
-    SettingController
-};
 
-<<<<<<< HEAD
 Route::prefix('v1')->group(function () {
     // Public Routes (Auth)
     Route::post('/auth/login', [AuthController::class, 'login']);
@@ -44,7 +38,7 @@ Route::prefix('v1')->group(function () {
         });
     });
 });
-=======
+
 Route::get('/provinces', [WilayahController::class, 'getProvinces']);
 Route::get('/cities/{province_code}', [WilayahController::class, 'getCities']);
 Route::get('/districts/{city_code}', [WilayahController::class, 'getDistricts']);
@@ -64,4 +58,3 @@ Route::post('complaints/{complaint}/attachments', [AttachmentController::class, 
 Route::delete('complaints/{complaint}/attachments/{attachment}', [AttachmentController::class, 'destroy']);
 
 Route::middleware('auth:sanctum')->group(function () {});
->>>>>>> form-pengaduan

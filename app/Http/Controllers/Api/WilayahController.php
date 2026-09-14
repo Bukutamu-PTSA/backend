@@ -19,7 +19,7 @@ class WilayahController extends Controller
         ]);
     }
 
-    public function getCities($provinceCode)
+    public function getCities(string $provinceCode)
     {
         $cities = City::where('province_code', $provinceCode)->orderBy('name')->pluck('name', 'code');
 
@@ -37,7 +37,7 @@ class WilayahController extends Controller
         ]);
     }
 
-    public function getDistricts($cityCode)
+    public function getDistricts(string $cityCode)
     {
         $districts = District::where('city_code', $cityCode)->orderBy('name')->pluck('name', 'code');
 
@@ -55,7 +55,7 @@ class WilayahController extends Controller
         ]);
     }
 
-    public function getVillages($districtCode)
+    public function getVillages(string $districtCode)
     {
         $villages = Village::where('district_code', $districtCode)->orderBy('name')->pluck('name', 'code');
 
