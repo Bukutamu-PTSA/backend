@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCompanyRequest;
 use App\Models\Company;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $query = Company::with('size');
+        $query = Company::with(['size', 'sector']);
 
         if ($request->filled('search')) {
-            $query->where('nama_perusahaan', 'like', '%'.$request->search.'%');
+            $query->where('nama_perusahaan', 'like', '%'.$request->string('search').'%');
         }
 
         return response()->json([
@@ -22,28 +24,14 @@ class CompanyController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreCompanyRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'nama_perusahaan' => 'required|string|max:255',
-            'sector_id' => 'nullable|exists:industrial_sectors,id',
-            'alamat' => 'required|string',
-            'jumlah_naker' => 'required|integer|min:1',
-            'size_id' => 'nullable|exists:company_sizes,id',
-            'provinsi' => 'required|string',
-            'kota_kab' => 'required|string',
-            'kecamatan' => 'required|string',
-            'kelurahan' => 'required|string',
-            'no_telp' => 'nullable|string',
-            'email' => 'nullable|email',
-        ]);
-
-        $company = Company::create($validated);
+        $company = Company::create($request->validated());
 
         return response()->json([
             'success' => true,
             'message' => 'Data perusahaan ditambahkan',
-            'data' => $company,
+            'data' => $company->load(['size', 'sector']),
         ], 201);
     }
 }
