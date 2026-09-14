@@ -13,6 +13,11 @@ class ComplaintResource extends JsonResource
             'id' => $this->id,
             'ticket_number' => $this->ticket_number,
             'description' => $this->description,
+            'status' => $this->status,
+            'priority' => $this->priority,
+            'complaint_date' => $this->complaint_date?->format('Y-m-d H:i:s'),
+            'deadline' => $this->deadline?->format('Y-m-d H:i:s'),
+            'closed_at' => $this->closed_at?->format('Y-m-d H:i:s'),
             'attachments' => $this->whenLoaded('attachments', fn () => AttachmentResource::collection($this->attachments)),
             'complainant' => [
                 'id' => $this->complainant?->id,
@@ -55,6 +60,17 @@ class ComplaintResource extends JsonResource
                 'category_name' => $this->category?->category_name,
                 'description' => $this->category?->description,
             ],
+            'complaint_type' => $this->when($this->complaint_type_id !== null || $this->relationLoaded('complaintType'), fn () => [
+                'id' => $this->complaintType?->id,
+                'type_code' => $this->complaintType?->type_code,
+                'type_name' => $this->complaintType?->type_name,
+            ]),
+            'assigned_to' => $this->when($this->assigned_to_user_id !== null || $this->relationLoaded('assignedTo'), fn () => [
+                'id' => $this->assignedTo?->id,
+                'username' => $this->assignedTo?->username,
+                'full_name' => $this->assignedTo?->full_name,
+                'email' => $this->assignedTo?->email,
+            ]),
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
         ];
     }

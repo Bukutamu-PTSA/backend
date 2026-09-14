@@ -147,7 +147,8 @@ class ComplaintStoreTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonMissingPath('data.title')
-            ->assertJsonMissingPath('data.priority')
+            ->assertJsonPath('data.priority', 'medium')
+            ->assertJsonPath('data.status', 'submitted')
             ->assertJsonPath('data.category.id', 1)
             ->assertJsonPath('data.category.category_name', 'Upah Kerja')
             ->assertJsonPath('data.company.sector.id', 1)

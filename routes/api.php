@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ComplainantController;
 use App\Http\Controllers\Api\ComplaintCategoryController;
 use App\Http\Controllers\Api\ComplaintController;
 use App\Http\Controllers\Api\ComplaintTypeController;
+use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\IndustrySectorController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ServiceCategoryController;
@@ -20,6 +21,10 @@ Route::prefix('v1')->group(function () {
     // Public Routes (Auth)
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/register', [AuthController::class, 'register']);
+
+    // FAQ Publik (hanya menampilkan yang berstatus published)
+    Route::get('/faqs', [FaqController::class, 'index']);
+    Route::get('/faqs/{faq}', [FaqController::class, 'show']);
 
     //  Protected Routes (Wajib Login / Bearer Token)
     Route::middleware('auth:sanctum')->group(function () {
@@ -75,6 +80,13 @@ Route::prefix('v1')->group(function () {
 
             // Hapus data pelapor
             Route::delete('/admin/complainants/{complainant}', [ComplainantController::class, 'destroy']);
+
+            // Manajemen FAQ (CRUD + Approve)
+            Route::get('/admin/faqs', [FaqController::class, 'adminIndex']);
+            Route::post('/admin/faqs', [FaqController::class, 'store']);
+            Route::put('/admin/faqs/{faq}', [FaqController::class, 'update']);
+            Route::patch('/admin/faqs/{faq}/approve', [FaqController::class, 'approve']);
+            Route::delete('/admin/faqs/{faq}', [FaqController::class, 'destroy']);
         });
     });
 });
@@ -96,4 +108,10 @@ Route::get('complaints/{complaint}/pdf', [ComplaintController::class, 'pdf']);
 Route::apiResource('complaints', ComplaintController::class)->except('store');
 Route::get('complaints/{complaint}/attachments', [AttachmentController::class, 'index']);
 Route::post('complaints/{complaint}/attachments', [AttachmentController::class, 'store']);
+Route::get('complaints/{complaint}/attachments/{attachment}/download', [AttachmentController::class, 'download'])
+    ->name('attachments.download');
 Route::delete('complaints/{complaint}/attachments/{attachment}', [AttachmentController::class, 'destroy']);
+
+// Verifikasi bukti pendukung — khusus admin & super admin.
+Route::middleware(['auth:sanctum', 'role:super_admin,admin'])
+    ->patch('complaints/{complaint}/attachments/{attachment}/verify', [AttachmentController::class, 'verify']);

@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Complaint;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
+
+class ComplaintService
+{
+    /**
+     * Jumlah hari SLA tindak lanjut berdasarkan prioritas aduan.
+     *
+     * @var array<string, int>
+     */
+    private const SLA_DAYS = [
+        'critical' => 1,
+        'high' => 3,
+        'medium' => 7,
+        'low' => 14,
+    ];
+
+    /**
+     * Buat tiket aduan baru lengkap dengan nomor tiket unik,
+     * tanggal batas (SLA) otomatis, dan catatan riwayat status awal.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createComplaint(array $data): Complaint
+    {
+        $priority = $data['priority'] ?? 'medium';
+        $complaintDate = isset($data['complaint_date'])
+            ? Carbon::parse($data['complaint_date'])
+            : now();
+
+        // Hitung tanggal batas hanya bila tidak dikirim eksplisit.
+        if (empty($data['deadline'])) {
+            $data['deadline'] = $this->calculateDeadline($priority, $complaintDate);
+        }
+
+        $data['priority'] = $priority;
+        $data['status'] = $data['status'] ?? 'submitted';
+        $data['complaint_date'] = $complaintDate;
+
+        $complaint = $this->createWithUniqueTicket($data);
+
+        $this->recordStatusChange($complaint, null, $complaint->status, 'Aduan dibuat');
+
+        return $complaint;
+    }
+
+    /**
+     * Ubah status aduan dan catat riwayat perubahannya.
+     */
+    public function changeStatus(Complaint $complaint, string $newStatus, ?string $notes = null): Complaint
+    {
+        $oldStatus = $complaint->status;
+
+        $attributes = ['status' => $newStatus];
+
+        if ($newStatus === 'closed' && $complaint->closed_at === null) {
+            $attributes['closed_at'] = now();
+        }
+
+        $complaint->update($attributes);
+
+        $this->recordStatusChange($complaint, $oldStatus, $newStatus, $notes);
+
+        return $complaint;
+    }
+
+    /**
+     * Hitung tanggal batas tindak lanjut berdasarkan prioritas.
+     */
+    public function calculateDeadline(string $priority, CarbonImmutable|Carbon|string|null $from = null): Carbon
+    {
+        $days = self::SLA_DAYS[$priority] ?? self::SLA_DAYS['medium'];
+        $base = $from ? Carbon::parse($from) : now();
+
+        return $base->copy()->addDays($days);
+    }
+
+    /**
+     * Nomor tiket unik dengan format TCK-<UNIQID>.
+     */
+    public function nextTicketNumber(): string
+    {
+        return 'TCK-'.strtoupper(uniqid());
+    }
+
+    /**
+     * Catat riwayat perubahan status pada tabel updates.
+     */
+    private function recordStatusChange(Complaint $complaint, ?string $oldStatus, string $newStatus, ?string $notes): void
+    {
+        $complaint->updates()->create([
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'notes' => $notes,
+        ]);
+    }
+
+    /**
+     * Simpan aduan dengan mekanisme retry apabila terjadi tabrakan nomor tiket.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function createWithUniqueTicket(array $data, int $retries = 3): Complaint
+    {
+        for ($attempt = 1; $attempt <= $retries; $attempt++) {
+            try {
+                return Complaint::create([...$data, 'ticket_number' => $this->nextTicketNumber()]);
+            } catch (QueryException $e) {
+                if ($attempt === $retries) {
+                    throw $e;
+                }
+            }
+        }
+
+        throw new \RuntimeException('Gagal membuat nomor tiket aduan yang unik');
+    }
+}

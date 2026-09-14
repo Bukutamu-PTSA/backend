@@ -125,6 +125,25 @@ class Complaint extends Model
     }
 
     /**
+     * Simpan berkas bukti pendukung (foto/pdf/video) beserta metadatanya.
+     *
+     * @param  array<string, mixed>  $meta
+     */
+    public function addAttachment(UploadedFile $file, array $meta = []): Attachment
+    {
+        return $this->attachments()->create([
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $file->store('complaints/'.$this->id, 'public'),
+            'file_type' => strtolower($file->getClientOriginalExtension()) ?: null,
+            'file_size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+            'description' => $meta['description'] ?? null,
+            'attachment_category_id' => $meta['attachment_category_id'] ?? null,
+            'uploaded_by_user_id' => $meta['uploaded_by_user_id'] ?? null,
+        ]);
+    }
+
+    /**
      * Local Scope: Filter berdasarkan ID kategori aduan.
      */
     public function scopeByCategory(Builder $query, int $categoryId): Builder
