@@ -16,9 +16,9 @@ class RoleController extends Controller
     public function index(): JsonResponse
     {
         $roles = [
-            ['value' => 'super_admin', 'label' => 'Super Administrator'],
-            ['value' => 'admin', 'label' => 'Administrator / Petugas'],
-            ['value' => 'pelapor', 'label' => 'Pelapor'],
+            ['value' => 'super_admin', 'label' => 'Super Admin'],
+            ['value' => 'admin', 'label' => 'Admin'],
+            ['value' => 'petugas', 'label' => 'Petugas'],
         ];
 
         return response()->json([

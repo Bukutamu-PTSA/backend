@@ -52,5 +52,26 @@ class UserSeeder extends Seeder
                 'golongan' => 'III/b',
             ],
         );
+
+        $petugas = User::updateOrCreate(
+            ['email' => 'petugas2@ptsa.go.id'],
+            [
+                'username' => 'petugas2',
+                'full_name' => 'Agus Wijaya',
+                'password' => Hash::make('password123'),
+                'role' => 'petugas',
+                'status' => 'aktif',
+            ],
+        );
+
+        AdminProfile::updateOrCreate(
+            ['user_id' => $petugas->id],
+            [
+                'nama_lengkap' => 'Agus Wijaya',
+                'nama_petugas' => 'Petugas PTSA 03',
+                'unit_kerja' => 'Pelayanan Pengaduan Ketenagakerjaan',
+                'golongan' => 'III/a',
+            ],
+        );
     }
 }

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ServiceCategoryController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SurveyController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WilayahController;
 use App\Models\IndustrialSector;
 use Illuminate\Support\Facades\Route;
@@ -81,6 +82,14 @@ Route::prefix('v1')->group(function () {
         Route::middleware('role:super_admin,admin')->group(function () {
             // Daftar role untuk manajemen/assign user
             Route::get('/admin/roles', [RoleController::class, 'index']);
+
+            // Manajemen User (petugas internal PTSA)
+            Route::get('/admin/users', [UserController::class, 'index']);
+            Route::post('/admin/users', [UserController::class, 'store']);
+            Route::get('/admin/users/{user}', [UserController::class, 'show']);
+            Route::put('/admin/users/{user}', [UserController::class, 'update']);
+            Route::patch('/admin/users/{user}', [UserController::class, 'update']);
+            Route::delete('/admin/users/{user}', [UserController::class, 'destroy']);
 
             // Master Kategori Pelayanan (KATEGORI_PELAYANAN)
             Route::post('/admin/service-categories', [ServiceCategoryController::class, 'store']);

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['super_admin', 'admin', 'pelapor'])->default('pelapor'); // 👈 Kolom role untuk RBAC
+            $table->enum('role', ['super_admin', 'admin', 'petugas'])->default('petugas'); // 👈 Kolom role RBAC internal (pelapor = tamu, tanpa akun)
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamp('last_login')->nullable();
             $table->rememberToken();
