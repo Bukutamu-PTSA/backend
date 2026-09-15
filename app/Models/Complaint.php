@@ -19,6 +19,8 @@ class Complaint extends Model
         'category_id',
         'ticket_number',
         'description',
+        'status',
+        'priority',
         'is_deleted',
         'complaint_date',
     ];
