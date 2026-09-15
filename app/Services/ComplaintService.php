@@ -82,11 +82,26 @@ class ComplaintService
     }
 
     /**
-     * Nomor tiket unik dengan format TCK-<UNIQID>.
+     * Nomor tiket dengan format: 3 digit nomor urut (reset harian)
+     * + 2 digit tanggal + 2 digit bulan + 2 digit tahun.
+     * Contoh: 001150926 = urutan ke-1 pada 15 September 2026.
      */
-    public function nextTicketNumber(): string
+    public function nextTicketNumber(?Carbon $date = null): string
     {
-        return 'TCK-'.strtoupper(uniqid());
+        $date = $date ? Carbon::parse($date) : now();
+        $dateCode = $date->format('dmy');
+
+        // Ambil nomor urut terakhir untuk tanggal ini berdasarkan tiket yang
+        // sudah ada (akhiran = dateCode), lalu tambah satu. Cara ini membuat
+        // nomor tetap berlanjut walau ada aduan yang dihapus di hari yang sama.
+        $lastSequence = (int) Complaint::query()
+            ->withoutGlobalScopes()
+            ->whereDate('complaint_date', $date->toDateString())
+            ->where('ticket_number', 'like', '%'.$dateCode)
+            ->selectRaw('MAX(CAST(LEFT(ticket_number, 3) AS INTEGER)) AS seq')
+            ->value('seq');
+
+        return sprintf('%03d%s', $lastSequence + 1, $dateCode);
     }
 
     /**
@@ -106,11 +121,15 @@ class ComplaintService
      *
      * @param  array<string, mixed>  $data
      */
-    private function createWithUniqueTicket(array $data, int $retries = 3): Complaint
+    private function createWithUniqueTicket(array $data, int $retries = 5): Complaint
     {
+        $date = isset($data['complaint_date']) ? Carbon::parse($data['complaint_date']) : now();
+
         for ($attempt = 1; $attempt <= $retries; $attempt++) {
             try {
-                return Complaint::create([...$data, 'ticket_number' => $this->nextTicketNumber()]);
+                // Hitung ulang nomor urut tiap percobaan agar bertambah bila
+                // terjadi tabrakan akibat aduan lain yang masuk bersamaan.
+                return Complaint::create([...$data, 'ticket_number' => $this->nextTicketNumber($date)]);
             } catch (QueryException $e) {
                 if ($attempt === $retries) {
                     throw $e;

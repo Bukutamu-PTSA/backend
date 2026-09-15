@@ -18,9 +18,9 @@ class FaqController extends Controller
     {
         $faqs = Faq::query()
             ->where('publication_status', 'published')
-            ->when($request->filled('category'), fn ($query) => $query->where('category', $request->string('category')))
+            ->when($request->filled('category'), fn($query) => $query->where('category', $request->string('category')))
             ->when($request->filled('search'), function ($query) use ($request) {
-                $term = '%'.mb_strtolower((string) $request->string('search')).'%';
+                $term = '%' . mb_strtolower((string) $request->string('search')) . '%';
                 $query->where(function ($inner) use ($term) {
                     $inner->whereRaw('LOWER(question) LIKE ?', [$term])
                         ->orWhereRaw('LOWER(answer) LIKE ?', [$term]);
@@ -52,7 +52,7 @@ class FaqController extends Controller
     {
         $faqs = Faq::query()
             ->with('approvedBy')
-            ->when($request->filled('status'), fn ($query) => $query->where('publication_status', $request->string('status')))
+            ->when($request->filled('status'), fn($query) => $query->where('publication_status', $request->string('status')))
             ->orderBy('order_number')
             ->latest('id')
             ->paginate(20);
