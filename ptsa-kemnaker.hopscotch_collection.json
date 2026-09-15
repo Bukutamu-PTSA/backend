@@ -8,7 +8,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "Login Petugas",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/auth/login",
@@ -24,7 +24,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Me (Profil User Login)",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/auth/me",
@@ -37,7 +37,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Logout",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/auth/logout",
@@ -59,7 +59,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "Submit Pengaduan",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/complaints",
@@ -75,7 +75,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Lacak Tiket",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/complaints/track/<<ticketNumber>>",
@@ -97,7 +97,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "Kategori Pelayanan",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/service-categories",
@@ -110,7 +110,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Jenis Pengaduan",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/complaint-types",
@@ -123,7 +123,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Sektor Industri",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/industry-sectors",
@@ -136,7 +136,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Skala Perusahaan",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/company-sizes",
@@ -149,7 +149,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Perusahaan (List/Search)",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/companies?search=",
@@ -173,7 +173,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "Daftar Pertanyaan Survei",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/surveys/questions",
@@ -186,7 +186,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Submit Survei Kepuasan",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/surveys",
@@ -202,7 +202,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "FAQ Publik (List)",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/faqs",
@@ -215,7 +215,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "FAQ Publik (Detail)",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/faqs/<<faqId>>",
@@ -237,7 +237,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "Provinsi",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/provinces",
@@ -250,7 +250,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Kota / Kabupaten",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/cities/<<provinceCode>>",
@@ -263,7 +263,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Kecamatan",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/districts/<<cityCode>>",
@@ -276,7 +276,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Kelurahan / Desa",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/villages/<<districtCode>>",
@@ -298,7 +298,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "List Pengaduan (Admin)",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/complaints?status=&search=",
@@ -314,7 +314,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Detail Pengaduan (Admin)",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/complaints/<<complaintId>>",
@@ -327,7 +327,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Ubah Status Pengaduan",
           "method": "PATCH",
           "endpoint": "<<baseUrl>>/api/v1/admin/complaints/<<complaintId>>/status",
@@ -343,7 +343,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Tugaskan Petugas",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/admin/complaints/<<complaintId>>/assign",
@@ -359,7 +359,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Update Pengaduan",
           "method": "PUT",
           "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>",
@@ -375,7 +375,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Hapus Pengaduan (Soft Delete)",
           "method": "DELETE",
           "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>",
@@ -388,7 +388,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Cetak PDF Formulir",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/pdf",
@@ -410,7 +410,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "List Lampiran",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments",
@@ -423,7 +423,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Upload Lampiran (multipart)",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments",
@@ -442,7 +442,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Download Lampiran",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments/<<attachmentId>>/download",
@@ -455,7 +455,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Verifikasi Bukti (Admin)",
           "method": "PATCH",
           "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments/<<attachmentId>>/verify",
@@ -471,7 +471,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Hapus Lampiran",
           "method": "DELETE",
           "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments/<<attachmentId>>",
@@ -493,7 +493,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "List / Cari Pelapor",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/complainants?nik=&search=",
@@ -509,7 +509,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Detail Pelapor",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/complainants/<<complainantId>>",
@@ -522,7 +522,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Tambah Pelapor",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/complainants",
@@ -538,7 +538,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Update Pelapor",
           "method": "PUT",
           "endpoint": "<<baseUrl>>/api/v1/complainants/<<complainantId>>",
@@ -554,7 +554,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Hapus Pelapor (Admin)",
           "method": "DELETE",
           "endpoint": "<<baseUrl>>/api/v1/admin/complainants/<<complainantId>>",
@@ -576,7 +576,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "Tambah Perusahaan",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/companies",
@@ -601,7 +601,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "List Notifikasi",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/notifications?unread_only=",
@@ -616,7 +616,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Tandai Dibaca",
           "method": "PATCH",
           "endpoint": "<<baseUrl>>/api/v1/notifications/<<notificationId>>/read",
@@ -638,7 +638,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "List User",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/users?search=&role=",
@@ -654,7 +654,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Daftar Role",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/roles",
@@ -667,7 +667,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Tambah User",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/admin/users",
@@ -683,7 +683,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Detail User",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/users/<<userId>>",
@@ -696,7 +696,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Edit User (password opsional)",
           "method": "PUT",
           "endpoint": "<<baseUrl>>/api/v1/admin/users/<<userId>>",
@@ -712,7 +712,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Hapus User",
           "method": "DELETE",
           "endpoint": "<<baseUrl>>/api/v1/admin/users/<<userId>>",
@@ -734,7 +734,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "Tambah Kategori Pelayanan",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/admin/service-categories",
@@ -750,7 +750,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Update Kategori Pelayanan",
           "method": "PUT",
           "endpoint": "<<baseUrl>>/api/v1/admin/service-categories/<<serviceCategoryId>>",
@@ -766,7 +766,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Hapus Kategori Pelayanan",
           "method": "DELETE",
           "endpoint": "<<baseUrl>>/api/v1/admin/service-categories/<<serviceCategoryId>>",
@@ -779,7 +779,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Tambah Jenis Pengaduan",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/admin/complaint-types",
@@ -795,7 +795,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Update Jenis Pengaduan",
           "method": "PUT",
           "endpoint": "<<baseUrl>>/api/v1/admin/complaint-types/<<complaintTypeId>>",
@@ -811,7 +811,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Hapus Jenis Pengaduan",
           "method": "DELETE",
           "endpoint": "<<baseUrl>>/api/v1/admin/complaint-types/<<complaintTypeId>>",
@@ -824,7 +824,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Tambah Sektor Industri",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/admin/industry-sectors",
@@ -840,7 +840,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Update Sektor Industri",
           "method": "PUT",
           "endpoint": "<<baseUrl>>/api/v1/admin/industry-sectors/<<industrialSectorId>>",
@@ -856,7 +856,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Hapus Sektor Industri",
           "method": "DELETE",
           "endpoint": "<<baseUrl>>/api/v1/admin/industry-sectors/<<industrialSectorId>>",
@@ -869,7 +869,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Tambah Skala Perusahaan",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/admin/company-sizes",
@@ -894,7 +894,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "List FAQ (Admin)",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/faqs?status=",
@@ -909,7 +909,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Tambah FAQ",
           "method": "POST",
           "endpoint": "<<baseUrl>>/api/v1/admin/faqs",
@@ -925,7 +925,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Update FAQ",
           "method": "PUT",
           "endpoint": "<<baseUrl>>/api/v1/admin/faqs/<<faqId>>",
@@ -941,7 +941,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Approve FAQ",
           "method": "PATCH",
           "endpoint": "<<baseUrl>>/api/v1/admin/faqs/<<faqId>>/approve",
@@ -954,7 +954,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Hapus FAQ",
           "method": "DELETE",
           "endpoint": "<<baseUrl>>/api/v1/admin/faqs/<<faqId>>",
@@ -976,7 +976,7 @@
       "folders": [],
       "requests": [
         {
-          "v": "13",
+          "v": 13,
           "name": "Overview Analitik",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/dashboard/overview?year=2026&month=",
@@ -992,7 +992,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Export CSV",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/reports/export/csv?year=2026&month=",
@@ -1008,7 +1008,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Export PDF",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/reports/export/pdf?year=2026&month=",
@@ -1024,7 +1024,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Dashboard - Ringkasan Kategori",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/dashboard/complaint-summary?period=",
@@ -1039,7 +1039,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Dashboard - Ringkasan Provinsi",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/dashboard/province-summary?with_categories=1&sort=total&direction=desc",
@@ -1056,7 +1056,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Dashboard - Statistik",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/dashboard/statistics?period=",
@@ -1071,7 +1071,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Pengaturan Sistem (List)",
           "method": "GET",
           "endpoint": "<<baseUrl>>/api/v1/admin/settings",
@@ -1084,7 +1084,7 @@
           "requestVariables": []
         },
         {
-          "v": "13",
+          "v": 13,
           "name": "Pengaturan Sistem (Update)",
           "method": "PUT",
           "endpoint": "<<baseUrl>>/api/v1/admin/settings/<<settingId>>",
