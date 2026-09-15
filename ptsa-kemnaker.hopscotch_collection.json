@@ -1,0 +1,1116 @@
+{
+  "v": 8,
+  "name": "PTSA KEMNAKER API",
+  "folders": [
+    {
+      "v": 8,
+      "name": "Auth (Internal)",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "Login Petugas",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/auth/login",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"email\": \"superadmin@ptsa.go.id\",\n  \"password\": \"password123\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "// Simpan token ke environment agar request lain otomatis terautentikasi\npw.test(\"Login berhasil\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\nconst body = pw.response.body;\nif (body && body.data && body.data.token) {\n  pw.env.set(\"token\", body.data.token);\n}",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Me (Profil User Login)",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/auth/me",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Logout",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/auth/logout",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Publik - Pengaduan (Guest)",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "Submit Pengaduan",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/complaints",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"category_id\": 1,\n  \"complaint_type_id\": 1,\n  \"description\": \"Perusahaan tidak membayar upah lembur selama tiga bulan berturut-turut.\",\n  \"priority\": \"medium\",\n  \"complainant\": {\n    \"nama_lengkap\": \"Budi Santoso\",\n    \"nik\": \"3201010101010001\",\n    \"alamat\": \"Jl. Merdeka No. 1\",\n    \"jenis_kelamin\": \"laki-laki\",\n    \"jabatan\": \"Operator\",\n    \"no_telp\": \"081234567890\",\n    \"email\": \"budi@example.com\"\n  },\n  \"company\": {\n    \"nama_perusahaan\": \"PT Maju Bersama\",\n    \"sector_id\": 1,\n    \"alamat\": \"Jl. Industri No. 2\",\n    \"jumlah_naker\": 120,\n    \"provinsi\": \"Jawa Barat\",\n    \"kota_kab\": \"Bekasi\",\n    \"kecamatan\": \"Cikarang\",\n    \"kelurahan\": \"Waluya\",\n    \"no_telp\": \"0211234567\",\n    \"email\": \"company@example.com\"\n  }\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Lacak Tiket",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/complaints/track/<<ticketNumber>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "none", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Publik - Master Data (Dropdown Form)",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "Kategori Pelayanan",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/service-categories",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Jenis Pengaduan",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/complaint-types",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Sektor Industri",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/industry-sectors",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Skala Perusahaan",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/company-sizes",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Perusahaan (List/Search)",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/companies?search=",
+          "params": [
+            { "key": "search", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "none", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Publik - Survei & FAQ",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "Daftar Pertanyaan Survei",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/surveys/questions",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Submit Survei Kepuasan",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/surveys",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"survey_date\": \"2026-09-15\",\n  \"nama_petugas\": \"Agus Wijaya\",\n  \"komunikasi_petugas\": \"baik\",\n  \"penjelasan_materi\": \"baik\",\n  \"sarana_prasarana\": \"cukup\",\n  \"rating_overall\": 5,\n  \"catatan\": \"Pelayanan cepat dan ramah.\",\n  \"is_anonymous\": false,\n  \"respondent_email\": \"responden@example.com\",\n  \"respondent_phone\": \"081200000000\",\n  \"answers\": [\n    { \"survey_question_id\": 1, \"answer\": \"Baik\" }\n  ]\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "FAQ Publik (List)",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/faqs",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "FAQ Publik (Detail)",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/faqs/<<faqId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "none", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Publik - Wilayah",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "Provinsi",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/provinces",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Kota / Kabupaten",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/cities/<<provinceCode>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Kecamatan",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/districts/<<cityCode>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Kelurahan / Desa",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/villages/<<districtCode>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "none", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "none", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Internal - Manajemen Pengaduan",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "List Pengaduan (Admin)",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/complaints?status=&search=",
+          "params": [
+            { "key": "status", "value": "", "active": true },
+            { "key": "search", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Detail Pengaduan (Admin)",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/complaints/<<complaintId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Ubah Status Pengaduan",
+          "method": "PATCH",
+          "endpoint": "<<baseUrl>>/api/v1/admin/complaints/<<complaintId>>/status",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"status\": \"reviewed\",\n  \"notes\": \"Sedang ditinjau petugas.\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Tugaskan Petugas",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/admin/complaints/<<complaintId>>/assign",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"assigned_to_user_id\": 2\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Update Pengaduan",
+          "method": "PUT",
+          "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"description\": \"Perusahaan sudah membayar seluruh upah lembur pekerja.\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Hapus Pengaduan (Soft Delete)",
+          "method": "DELETE",
+          "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Cetak PDF Formulir",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/pdf",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Internal - Bukti Pendukung",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "List Lampiran",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Upload Lampiran (multipart)",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "multipart/form-data",
+            "body": [
+              { "key": "attachments[]", "value": "", "active": true, "isFile": true },
+              { "key": "description", "value": "Slip gaji 3 bulan terakhir", "active": true, "isFile": false }
+            ]
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Download Lampiran",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments/<<attachmentId>>/download",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Verifikasi Bukti (Admin)",
+          "method": "PATCH",
+          "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments/<<attachmentId>>/verify",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"is_verified\": true\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Hapus Lampiran",
+          "method": "DELETE",
+          "endpoint": "<<baseUrl>>/api/complaints/<<complaintId>>/attachments/<<attachmentId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Internal - Pelapor (Biodata)",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "List / Cari Pelapor",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/complainants?nik=&search=",
+          "params": [
+            { "key": "nik", "value": "", "active": true },
+            { "key": "search", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Detail Pelapor",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/complainants/<<complainantId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Tambah Pelapor",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/complainants",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"nama_lengkap\": \"Siti Aminah\",\n  \"nik\": \"3201010101010002\",\n  \"alamat\": \"Jl. Merdeka No. 2\",\n  \"jenis_kelamin\": \"perempuan\",\n  \"jabatan\": \"Operator\",\n  \"no_telp\": \"081234567891\",\n  \"email\": \"siti@example.com\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Update Pelapor",
+          "method": "PUT",
+          "endpoint": "<<baseUrl>>/api/v1/complainants/<<complainantId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"no_telp\": \"081299998888\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Hapus Pelapor (Admin)",
+          "method": "DELETE",
+          "endpoint": "<<baseUrl>>/api/v1/admin/complainants/<<complainantId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Internal - Perusahaan",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "Tambah Perusahaan",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/companies",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"nama_perusahaan\": \"PT Sejahtera Abadi\",\n  \"sector_id\": 1,\n  \"size_id\": 1,\n  \"alamat\": \"Jl. Industri No. 10\",\n  \"provinsi\": \"Jawa Barat\",\n  \"kota_kab\": \"Bekasi\",\n  \"kecamatan\": \"Cikarang\",\n  \"kelurahan\": \"Waluya\",\n  \"no_telp\": \"0217654321\",\n  \"email\": \"sejahtera@example.com\",\n  \"jumlah_naker\": 45,\n  \"npwp\": \"012345678901234\",\n  \"status\": \"aktif\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Internal - Notifikasi",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "List Notifikasi",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/notifications?unread_only=",
+          "params": [
+            { "key": "unread_only", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Tandai Dibaca",
+          "method": "PATCH",
+          "endpoint": "<<baseUrl>>/api/v1/notifications/<<notificationId>>/read",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Admin - Manajemen User",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "List User",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/users?search=&role=",
+          "params": [
+            { "key": "search", "value": "", "active": true },
+            { "key": "role", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Daftar Role",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/roles",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Tambah User",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/admin/users",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"Agus Wijaya\",\n  \"email\": \"agus.wijaya@kemnaker.go.id\",\n  \"password\": \"password123\",\n  \"role\": \"petugas\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Detail User",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/users/<<userId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Edit User (password opsional)",
+          "method": "PUT",
+          "endpoint": "<<baseUrl>>/api/v1/admin/users/<<userId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"Agus Wijaya\",\n  \"role\": \"admin\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Hapus User",
+          "method": "DELETE",
+          "endpoint": "<<baseUrl>>/api/v1/admin/users/<<userId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Admin - Master Data",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "Tambah Kategori Pelayanan",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/admin/service-categories",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"category_code\": \"WAJIB_LAPOR\",\n  \"category_name\": \"Wajib Lapor Ketenagakerjaan\",\n  \"description\": \"Kategori pelaporan WLKP\",\n  \"icon\": \"file-text\",\n  \"color\": \"#B91C1C\",\n  \"status\": \"aktif\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Update Kategori Pelayanan",
+          "method": "PUT",
+          "endpoint": "<<baseUrl>>/api/v1/admin/service-categories/<<serviceCategoryId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"category_name\": \"Wajib Lapor Ketenagakerjaan Perusahaan\",\n  \"color\": \"#0F766E\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Hapus Kategori Pelayanan",
+          "method": "DELETE",
+          "endpoint": "<<baseUrl>>/api/v1/admin/service-categories/<<serviceCategoryId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Tambah Jenis Pengaduan",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/admin/complaint-types",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"type_code\": \"UPAH_KERJA\",\n  \"type_name\": \"Upah Kerja\",\n  \"description\": null\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Update Jenis Pengaduan",
+          "method": "PUT",
+          "endpoint": "<<baseUrl>>/api/v1/admin/complaint-types/<<complaintTypeId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"type_name\": \"Norma Perlindungan Upah\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Hapus Jenis Pengaduan",
+          "method": "DELETE",
+          "endpoint": "<<baseUrl>>/api/v1/admin/complaint-types/<<complaintTypeId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Tambah Sektor Industri",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/admin/industry-sectors",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"sector_code\": \"MANUFACTURING\",\n  \"sector_name\": \"Industri Pengolahan\",\n  \"description\": null\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Update Sektor Industri",
+          "method": "PUT",
+          "endpoint": "<<baseUrl>>/api/v1/admin/industry-sectors/<<industrialSectorId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"sector_name\": \"Manufaktur\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Hapus Sektor Industri",
+          "method": "DELETE",
+          "endpoint": "<<baseUrl>>/api/v1/admin/industry-sectors/<<industrialSectorId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Tambah Skala Perusahaan",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/admin/company-sizes",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"size_code\": \"MEDIUM\",\n  \"size_name\": \"Menengah\",\n  \"min_employees\": 20,\n  \"max_employees\": 99\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Admin - FAQ",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "List FAQ (Admin)",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/faqs?status=",
+          "params": [
+            { "key": "status", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Tambah FAQ",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/v1/admin/faqs",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"question\": \"Siapa saja yang berhak menyampaikan aduan ketenagakerjaan di portal ini?\",\n  \"answer\": \"Pekerja/buruh, perwakilan serikat pekerja, maupun masyarakat umum.\",\n  \"category\": \"Umum\",\n  \"publication_status\": \"published\",\n  \"order_number\": 1\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Update FAQ",
+          "method": "PUT",
+          "endpoint": "<<baseUrl>>/api/v1/admin/faqs/<<faqId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"answer\": \"Jawaban FAQ yang diperbarui.\",\n  \"publication_status\": \"published\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Approve FAQ",
+          "method": "PATCH",
+          "endpoint": "<<baseUrl>>/api/v1/admin/faqs/<<faqId>>/approve",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Hapus FAQ",
+          "method": "DELETE",
+          "endpoint": "<<baseUrl>>/api/v1/admin/faqs/<<faqId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    },
+    {
+      "v": 8,
+      "name": "Admin - Dashboard & Laporan",
+      "folders": [],
+      "requests": [
+        {
+          "v": "13",
+          "name": "Overview Analitik",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/dashboard/overview?year=2026&month=",
+          "params": [
+            { "key": "year", "value": "2026", "active": true },
+            { "key": "month", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Export CSV",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/reports/export/csv?year=2026&month=",
+          "params": [
+            { "key": "year", "value": "2026", "active": true },
+            { "key": "month", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Export PDF",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/reports/export/pdf?year=2026&month=",
+          "params": [
+            { "key": "year", "value": "2026", "active": true },
+            { "key": "month", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Dashboard - Ringkasan Kategori",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/dashboard/complaint-summary?period=",
+          "params": [
+            { "key": "period", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Dashboard - Ringkasan Provinsi",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/dashboard/province-summary?with_categories=1&sort=total&direction=desc",
+          "params": [
+            { "key": "with_categories", "value": "1", "active": true },
+            { "key": "sort", "value": "total", "active": true },
+            { "key": "direction", "value": "desc", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Dashboard - Statistik",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/dashboard/statistics?period=",
+          "params": [
+            { "key": "period", "value": "", "active": true }
+          ],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Pengaturan Sistem (List)",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/v1/admin/settings",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": { "contentType": null, "body": null },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        },
+        {
+          "v": "13",
+          "name": "Pengaturan Sistem (Update)",
+          "method": "PUT",
+          "endpoint": "<<baseUrl>>/api/v1/admin/settings/<<settingId>>",
+          "params": [],
+          "headers": [],
+          "auth": { "authType": "inherit", "authActive": true },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"setting_value\": \"PTSA KEMNAKER\",\n  \"description\": \"Nama aplikasi\"\n}"
+          },
+          "preRequestScript": "",
+          "testScript": "",
+          "requestVariables": []
+        }
+      ],
+      "auth": { "authType": "inherit", "authActive": true },
+      "headers": []
+    }
+  ],
+  "requests": [],
+  "auth": {
+    "authType": "bearer",
+    "authActive": true,
+    "token": "<<token>>"
+  },
+  "headers": [
+    { "key": "Accept", "value": "application/json", "active": true }
+  ]
+}
