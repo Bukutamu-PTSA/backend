@@ -8,8 +8,10 @@ use App\Models\Complainant;
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
 use App\Models\User;
+use App\Services\ReportService;
 use Database\Seeders\CompanySizeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class DashboardReportTest extends TestCase
@@ -219,6 +221,45 @@ class DashboardReportTest extends TestCase
 
         $this->assertStringContainsString($included->ticket_number, $content);
         $this->assertStringNotContainsString($excluded->ticket_number, $content);
+    }
+
+    public function test_export_pdf_renders_horizontal_bar_charts(): void
+    {
+        $admin = $this->createAdmin();
+
+        $this->createComplaint(jumlahNaker: 25);
+
+        $response = $this->actingAs($admin)
+            ->get('/api/v1/reports/export/pdf');
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+
+        $this->assertStringStartsWith('%PDF-', $response->streamedContent());
+
+        $chartHtml = (new ReflectionMethod(ReportService::class, 'renderBarChart'))
+            ->invoke(new ReportService, 'Grafik Uji', ['Upah Kerja' => 3]);
+
+        $this->assertStringContainsString('width:30%;', $chartHtml);
+        $this->assertStringNotContainsString('height:', $chartHtml);
+    }
+
+    public function test_export_pdf_chart_includes_categories_without_complaints(): void
+    {
+        $this->createComplaint();
+
+        ComplaintCategory::create([
+            'category_code' => 'K3',
+            'category_name' => 'Keselamatan Kerja',
+        ]);
+
+        $byCategory = (new ReflectionMethod(ReportService::class, 'getReportData'))
+            ->invoke(new ReportService, []);
+
+        $this->assertSame(
+            ['Upah Kerja' => 1, 'Keselamatan Kerja' => 0],
+            $byCategory['byCategory']
+        );
     }
 
     public function test_report_endpoints_require_authentication(): void

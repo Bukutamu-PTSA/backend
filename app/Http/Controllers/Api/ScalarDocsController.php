@@ -64,20 +64,67 @@ class ScalarDocsController
                         ],
                     ],
                 ],
+                '/surveys/form' => [
+                    'get' => [
+                        'summary' => 'Get the public survey form (single survey with 5 questions)',
+                        'tags' => ['Survey'],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Public survey form',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'id' => ['type' => 'integer'],
+                                                'status' => ['type' => 'string'],
+                                                'closed_at' => ['type' => 'string', 'format' => 'date-time', 'nullable' => true],
+                                                'created_at' => ['type' => 'string', 'format' => 'date-time'],
+                                                'updated_at' => ['type' => 'string', 'format' => 'date-time'],
+                                                'questions' => [
+                                                    'type' => 'array',
+                                                    'items' => [
+                                                        'type' => 'object',
+                                                        'properties' => [
+                                                            'id' => ['type' => 'integer'],
+                                                            'question_number' => ['type' => 'integer'],
+                                                            'question_text' => ['type' => 'string'],
+                                                            'type' => ['type' => 'string'],
+                                                            'options' => ['type' => 'array', 'items' => ['type' => 'string'], 'nullable' => true],
+                                                        ],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
                 '/surveys' => [
                     'post' => [
-                        'summary' => 'Create a new survey',
+                        'summary' => 'Submit survey answers, appended to the public survey form (anonymous, no login)',
                         'tags' => ['Survey'],
-                        'security' => [['sanctum' => []]],
                         'requestBody' => [
                             'required' => true,
                             'content' => [
                                 'application/json' => [
                                     'schema' => [
                                         'type' => 'object',
-                                        'required' => ['complaint_id'],
+                                        'required' => ['responses'],
                                         'properties' => [
-                                            'complaint_id' => ['type' => 'integer'],
+                                            'responses' => [
+                                                'type' => 'array',
+                                                'items' => [
+                                                    'type' => 'object',
+                                                    'required' => ['question_number', 'answer'],
+                                                    'properties' => [
+                                                        'question_number' => ['type' => 'integer'],
+                                                        'answer' => ['type' => 'string'],
+                                                    ],
+                                                ],
+                                            ],
                                         ],
                                     ],
                                 ],
@@ -85,10 +132,104 @@ class ScalarDocsController
                         ],
                         'responses' => [
                             '201' => [
-                                'description' => 'Survey created successfully',
+                                'description' => 'Responses stored successfully',
+                            ],
+                            '422' => [
+                                'description' => 'Validation error or closed survey',
+                            ],
+                        ],
+                    ],
+                ],
+                '/surveys/satisfaction' => [
+                    'get' => [
+                        'summary' => 'Get survey satisfaction index',
+                        'tags' => ['Survey'],
+                        'parameters' => [
+                            [
+                                'name' => 'period',
+                                'in' => 'query',
+                                'schema' => ['type' => 'string'],
+                                'description' => 'Filter responses to today (period=today)',
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Satisfaction index from likert answers (Baik=5, Cukup=3, Kurang=1)',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'data' => [
+                                                    'type' => 'object',
+                                                    'properties' => [
+                                                        'satisfaction_index' => ['type' => 'number', 'nullable' => true],
+                                                        'satisfaction_scale' => ['type' => 'integer'],
+                                                        'satisfaction_responses' => ['type' => 'integer'],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                '/surveys/responses' => [
+                    'get' => [
+                        'summary' => 'List all survey responses grouped per submission (Admin Only)',
+                        'tags' => ['Survey'],
+                        'security' => [['sanctum' => []]],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Questions header and submissions grouped by person',
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'data' => [
+                                                    'type' => 'object',
+                                                    'properties' => [
+                                                        'questions' => [
+                                                            'type' => 'array',
+                                                            'items' => [
+                                                                'type' => 'object',
+                                                                'properties' => [
+                                                                    'question_number' => ['type' => 'integer'],
+                                                                    'question_text' => ['type' => 'string'],
+                                                                    'type' => ['type' => 'string'],
+                                                                ],
+                                                            ],
+                                                        ],
+                                                        'submissions' => [
+                                                            'type' => 'array',
+                                                            'items' => [
+                                                                'type' => 'object',
+                                                                'properties' => [
+                                                                    'no' => ['type' => 'integer'],
+                                                                    'submission_id' => ['type' => 'string', 'format' => 'uuid'],
+                                                                    'submitted_at' => ['type' => 'string', 'format' => 'date-time'],
+                                                                    'answers' => [
+                                                                        'type' => 'object',
+                                                                        'additionalProperties' => ['type' => 'string'],
+                                                                    ],
+                                                                ],
+                                                            ],
+                                                        ],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
                             ],
                             '401' => [
                                 'description' => 'Unauthorized',
+                            ],
+                            '403' => [
+                                'description' => 'Forbidden (not admin)',
                             ],
                         ],
                     ],
@@ -115,16 +256,112 @@ class ScalarDocsController
                                             'type' => 'object',
                                             'properties' => [
                                                 'id' => ['type' => 'integer'],
-                                                'complaint_id' => ['type' => 'integer'],
-                                                'created_by_admin_id' => ['type' => 'integer'],
                                                 'status' => ['type' => 'string'],
                                                 'closed_at' => ['type' => 'string', 'format' => 'date-time', 'nullable' => true],
                                                 'created_at' => ['type' => 'string', 'format' => 'date-time'],
                                                 'updated_at' => ['type' => 'string', 'format' => 'date-time'],
+                                                'questions' => [
+                                                    'type' => 'array',
+                                                    'items' => [
+                                                        'type' => 'object',
+                                                        'properties' => [
+                                                            'id' => ['type' => 'integer'],
+                                                            'question_number' => ['type' => 'integer'],
+                                                            'question_text' => ['type' => 'string'],
+                                                            'type' => ['type' => 'string'],
+                                                            'options' => ['type' => 'array', 'items' => ['type' => 'string'], 'nullable' => true],
+                                                        ],
+                                                    ],
+                                                ],
                                             ],
                                         ],
                                     ],
                                 ],
+                            ],
+                            '404' => [
+                                'description' => 'Survey not found',
+                            ],
+                        ],
+                    ],
+                    'put' => [
+                        'summary' => 'Update a survey (status and/or questions)',
+                        'tags' => ['Survey'],
+                        'security' => [['sanctum' => []]],
+                        'parameters' => [
+                            [
+                                'name' => 'survey',
+                                'in' => 'path',
+                                'required' => true,
+                                'schema' => ['type' => 'integer'],
+                                'description' => 'Survey ID',
+                            ],
+                        ],
+                        'requestBody' => [
+                            'required' => true,
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'status' => [
+                                                'type' => 'string',
+                                                'enum' => ['ACTIVE', 'CLOSED'],
+                                            ],
+                                            'questions' => [
+                                                'type' => 'array',
+                                                'items' => [
+                                                    'type' => 'object',
+                                                    'required' => ['question_number', 'question_text', 'type'],
+                                                    'properties' => [
+                                                        'question_number' => ['type' => 'integer'],
+                                                        'question_text' => ['type' => 'string'],
+                                                        'type' => ['type' => 'string', 'enum' => ['likert', 'text']],
+                                                        'options' => ['type' => 'array', 'items' => ['type' => 'string'], 'nullable' => true],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Survey updated',
+                            ],
+                            '401' => [
+                                'description' => 'Unauthorized',
+                            ],
+                            '403' => [
+                                'description' => 'Forbidden (not admin)',
+                            ],
+                            '404' => [
+                                'description' => 'Survey not found',
+                            ],
+                        ],
+                    ],
+                    'delete' => [
+                        'summary' => 'Delete a survey (cascades questions and responses)',
+                        'tags' => ['Survey'],
+                        'security' => [['sanctum' => []]],
+                        'parameters' => [
+                            [
+                                'name' => 'survey',
+                                'in' => 'path',
+                                'required' => true,
+                                'schema' => ['type' => 'integer'],
+                                'description' => 'Survey ID',
+                            ],
+                        ],
+                        'responses' => [
+                            '200' => [
+                                'description' => 'Survey deleted',
+                            ],
+                            '401' => [
+                                'description' => 'Unauthorized',
+                            ],
+                            '403' => [
+                                'description' => 'Forbidden (not admin)',
                             ],
                             '404' => [
                                 'description' => 'Survey not found',

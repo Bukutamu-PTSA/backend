@@ -115,6 +115,72 @@ class ComplaintStoreTest extends TestCase
         $this->assertSame(1, Complaint::count());
     }
 
+    public function test_attachments_accept_pdf_and_tag_document_file_type(): void
+    {
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+
+        $response = $this->postJson('/api/complaints', $this->payload([
+            'attachments' => [
+                UploadedFile::fake()->create('surat.pdf', 50, 'application/pdf'),
+                UploadedFile::fake()->create('bukti.jpg', 50),
+            ],
+        ]));
+
+        $response->assertStatus(201)->assertJsonCount(2, 'data.attachments');
+
+        $response->assertJsonFragment([
+            'file_name' => 'surat.pdf',
+            'file_type' => 'document',
+            'mime_type' => 'application/pdf',
+        ])->assertJsonFragment([
+            'file_name' => 'bukti.jpg',
+            'file_type' => 'photo',
+        ]);
+
+        $this->assertDatabaseHas('attachments', ['file_name' => 'surat.pdf', 'file_type' => 'document', 'mime_type' => 'application/pdf']);
+        $this->assertDatabaseHas('attachments', ['file_name' => 'bukti.jpg', 'file_type' => 'photo']);
+    }
+
+    public function test_store_generates_daily_sequential_ticket_number(): void
+    {
+        ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+
+        $this->postJson('/api/complaints', $this->payload())
+            ->assertCreated()
+            ->assertJsonPath('data.ticket_number', 'TKT-'.now()->format('d-m-Y').'-001');
+
+        $this->postJson('/api/complaints', $this->payload())
+            ->assertCreated()
+            ->assertJsonPath('data.ticket_number', 'TKT-'.now()->format('d-m-Y').'-002');
+    }
+
+    public function test_ticket_number_resets_each_day(): void
+    {
+        $category = ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
+        $complainant = Complainant::create([
+            'nama_lengkap' => 'Budi Santoso', 'nik' => '3201010101010099', 'alamat' => 'Jl. Test No. 1',
+            'jenis_kelamin' => 'laki-laki', 'jabatan' => 'Pekerja', 'no_telp' => '081234567890',
+            'email' => 'budi@example.com',
+        ]);
+        $company = Company::create([
+            'nama_perusahaan' => 'PT Lama', 'sector_id' => 1, 'size_id' => CompanySize::first()->id, 'alamat' => 'Jl. Lama',
+            'jumlah_naker' => 25, 'provinsi' => 'Jawa Barat', 'kota_kab' => 'Bekasi',
+            'kecamatan' => 'Cikarang', 'kelurahan' => 'Waluya', 'no_telp' => '0211234567',
+            'email' => 'lama@example.com',
+        ]);
+        $yesterday = Complaint::create([
+            'complainant_id' => $complainant->id, 'company_id' => $company->id, 'category_id' => $category->id,
+            'ticket_number' => 'TKT-20-09-2026-001', 'description' => 'Kemarin.', 'complaint_date' => now(),
+        ]);
+        $yesterday->forceFill(['created_at' => now()->subDay()])->save();
+
+        $this->postJson('/api/complaints', $this->payload())
+            ->assertCreated()
+            ->assertJsonPath('data.ticket_number', 'TKT-'.now()->format('d-m-Y').'-001');
+
+        $this->assertDatabaseCount('complaints', 2);
+    }
+
     public function test_screenshot_payload_accepts_category_and_creates_complaint(): void
     {
         ComplaintCategory::create(['category_code' => 'UPAH_KERJA', 'category_name' => 'Upah Kerja']);
@@ -466,8 +532,8 @@ class ComplaintStoreTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.total_complaints', 2)
             ->assertJsonMissingPath('data.completed_complaints')
-            ->assertJsonPath('data.satisfaction_index', null)
-            ->assertJsonPath('data.satisfaction_responses', 0)
+            ->assertJsonMissingPath('data.satisfaction_index')
+            ->assertJsonMissingPath('data.satisfaction_responses')
             ->assertJsonPath('data.by_company_size.0.size_code', 'MICRO')
             ->assertJsonPath('data.by_company_size.0.count', 0)
             ->assertJsonPath('data.by_company_size.3.size_code', 'LARGE')
@@ -503,7 +569,7 @@ class ComplaintStoreTest extends TestCase
 
         $response->assertOk()
             ->assertHeader('Content-Type', 'application/pdf')
-            ->assertHeader('Content-Disposition', 'attachment; filename="complaint-'.$complaint->id.'.pdf"');
+            ->assertHeader('Content-Disposition', 'attachment; filename="laporan-pengaduan-'.$complaint->id.'.pdf"; filename*=UTF-8\'\'laporan-pengaduan-'.$complaint->id.'.pdf');
         $this->assertStringStartsWith('%PDF-', $response->getContent());
         $this->assertStringContainsString('/Count 2', $response->getContent());
     }

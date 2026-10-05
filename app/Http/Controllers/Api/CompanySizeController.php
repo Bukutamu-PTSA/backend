@@ -33,4 +33,22 @@ class CompanySizeController extends Controller
             'data' => $size,
         ], 201);
     }
+
+    public function update(Request $request, CompanySize $companySize)
+    {
+        $validated = $request->validate([
+            'size_code' => 'sometimes|required|string|unique:company_sizes,size_code,'.$companySize->id,
+            'size_name' => 'sometimes|required|string',
+            'min_employees' => 'sometimes|required|integer|min:0',
+            'max_employees' => 'nullable|integer|gt:min_employees',
+        ]);
+
+        $companySize->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Skala berhasil diperbarui',
+            'data' => $companySize,
+        ]);
+    }
 }

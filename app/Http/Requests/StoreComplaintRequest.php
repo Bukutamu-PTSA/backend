@@ -17,7 +17,7 @@ class StoreComplaintRequest extends FormRequest
             'category_id' => 'required|exists:complaint_categories,id',
             'description' => 'required|string',
             'attachments' => 'nullable|array',
-            'attachments.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+            'attachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
 
             'complainant.nama_lengkap' => 'required|string|max:255',
             'complainant.nik' => ['required', 'string', 'regex:/^[0-9]{16}$/'],

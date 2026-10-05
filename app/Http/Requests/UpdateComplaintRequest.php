@@ -15,7 +15,7 @@ class UpdateComplaintRequest extends FormRequest
     {
         return [
             'category_id' => 'sometimes|exists:complaint_categories,id',
-            'description' => 'sometimes|string|min:20',
+            'description' => 'sometimes|string',
 
             'complainant.nama_lengkap' => 'sometimes|string|max:255',
             'complainant.nik' => ['sometimes', 'string', 'regex:/^[0-9]{16}$/'],

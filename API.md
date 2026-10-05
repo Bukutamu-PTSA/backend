@@ -147,7 +147,7 @@ Create requests require unique `category_code` and `category_name`. Update reque
 |---|---|---|---|
 | GET | `/dashboard/complaint-summary` | Public | Return complaint counts by category. |
 | GET | `/dashboard/province-summary` | Public | Return complaint counts grouped by province. |
-| GET | `/dashboard/statistics` | Public | Return complaint and satisfaction statistics. |
+| GET | `/dashboard/statistics` | Public | Return complaint statistics. |
 | GET | `/v1/dashboard/overview` | Admin | Return dashboard totals, status/category/size counts, and recent complaints. |
 | GET | `/v1/reports/by-category` | Admin | Return complaint counts by category. |
 | GET | `/v1/reports/by-company-size` | Admin | Return complaint counts by company-size range. |
@@ -225,33 +225,79 @@ Upload requests use `multipart/form-data` with a required `attachments` array co
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| GET | `/surveys/{survey}` | Public | Return a survey with its complaint, administrator, and questions. |
-| POST | `/surveys/{survey}/responses` | Public | Submit survey responses. |
-| POST | `/surveys` | Admin | Create a survey and its default questions. |
+| GET | `/surveys/form` | Public | Return the single public survey form with its 5 questions. |
+| POST | `/surveys` | Public | Submit answers, appended to the single public survey. |
+| GET | `/surveys/satisfaction` | Public | Return the satisfaction index from likert answers. |
+| GET | `/surveys/responses` | Admin | Return all survey responses for the dashboard. |
+| GET | `/surveys/{survey}` | Public | Return a survey with its questions. |
+| POST | `/surveys/{survey}/responses` | Public | Submit survey responses (legacy, keyed by question ID). |
 | PATCH | `/surveys/{survey}/close` | Admin | Close an active survey. |
 
-### Create a survey
+### Get the public survey form
 
-```json
-{
-  "complaint_id": 1
-}
+The app has a single public survey (created once via `SurveySeeder`, or lazily on first access) holding the five default questions. Anyone can fetch it without login:
+
+```
+GET /surveys/form
 ```
 
-### Submit survey responses
+### Submit survey answers
 
 ```json
 {
   "responses": [
-    {
-      "survey_question_id": 1,
-      "answer": "Nama Petugas"
-    }
+    { "question_number": 1, "answer": "Petugas A" },
+    { "question_number": 2, "answer": "Baik" },
+    { "question_number": 3, "answer": "Cukup" },
+    { "question_number": 4, "answer": "Kurang" }
   ]
 }
 ```
 
-Each response requires an existing `survey_question_id` and a string `answer`. The question must belong to the survey. Closed surveys cannot receive responses.
+Each call appends a fresh set of rows to the single public survey, so respondents never overwrite each other. Questions 1–4 are required; likert answers (2–4) must be one of `Baik`, `Cukup`, `Kurang`. Question 5 (`Catatan`) is optional free text. Closed surveys cannot receive responses.
+
+### Satisfaction index
+
+`GET /surveys/satisfaction` (optional `?period=today`) maps likert answers to a five-point scale (`Baik`=5, `Cukup`=3, `Kurang`=1) and returns their average. Free-text answers such as `Nama Petugas` are ignored. Returns `null` when there are no rated answers.
+
+### Survey responses (dashboard)
+
+`GET /surveys/responses` (admin, Bearer token) returns the public form's questions plus every submission as a single row, oldest first. Each submission has a `submission_id` (UUID) and an `answers` map keyed by question number.
+
+```json
+{
+  "success": true,
+  "data": {
+    "questions": [
+      { "question_number": 1, "question_text": "Nama Petugas", "type": "text" },
+      { "question_number": 2, "question_text": "Bagaimana Komunikasi Petugas Dalam Memberikan Layanan", "type": "likert" },
+      { "question_number": 3, "question_text": "Bagaimana Penjelasan Materi yang Diberikan oleh Petugas", "type": "likert" },
+      { "question_number": 4, "question_text": "Bagaimana Sarana dan Prasarana Layanan PTSA", "type": "likert" },
+      { "question_number": 5, "question_text": "Catatan", "type": "text" }
+    ],
+    "submissions": [
+      {
+        "no": 1,
+        "submission_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "submitted_at": "2026-09-17T10:00:00.000000Z",
+        "answers": {
+          "1": "Petugas Andi",
+          "2": "Baik",
+          "3": "Cukup",
+          "4": "Kurang",
+          "5": "Bagus"
+        }
+      },
+      {
+        "no": 2,
+        "submission_id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+        "submitted_at": "2026-09-17T10:05:00.000000Z",
+        "answers": { "1": "Petugas Budi", "2": "Kurang", "3": "Kurang", "4": "Baik" }
+      }
+    ]
+  }
+}
+```
 
 ## Errors
 

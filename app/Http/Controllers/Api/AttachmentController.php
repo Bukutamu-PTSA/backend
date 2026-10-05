@@ -20,13 +20,13 @@ class AttachmentController extends Controller
     {
         $validated = $request->validate([
             'attachments' => 'required|array|min:1',
-            'attachments.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+            'attachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ]);
 
-        $saved = collect($validated['attachments'])->map(fn ($file) => $complaint->addPhoto($file));
+        $saved = collect($validated['attachments'])->map(fn ($file) => $complaint->addAttachment($file));
 
         return AttachmentResource::collection($saved)
-            ->additional(['success' => true, 'message' => count($saved) . ' lampiran berhasil diunggah'])
+            ->additional(['success' => true, 'message' => count($saved).' lampiran berhasil diunggah'])
             ->response()
             ->setStatusCode(201);
     }

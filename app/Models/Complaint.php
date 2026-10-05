@@ -68,14 +68,6 @@ class Complaint extends Model
     }
 
     /**
-     * Relasi ke sesi survei kepuasan layanan.
-     */
-    public function surveys(): HasMany
-    {
-        return $this->hasMany(Survey::class);
-    }
-
-    /**
      * Relasi ke notifikasi terkait aduan ini.
      */
     public function notifications(): HasMany
@@ -83,12 +75,12 @@ class Complaint extends Model
         return $this->hasMany(Notification::class);
     }
 
-    public function addPhoto(UploadedFile $file): Attachment
+    public function addAttachment(UploadedFile $file): Attachment
     {
         return $this->attachments()->create([
             'file_name' => $file->getClientOriginalName(),
             'file_path' => $file->store('complaints/'.$this->id, 'public'),
-            'file_type' => 'photo',
+            'file_type' => $file->getMimeType() === 'application/pdf' ? 'document' : 'photo',
             'file_size' => $file->getSize(),
             'mime_type' => $file->getMimeType(),
         ]);

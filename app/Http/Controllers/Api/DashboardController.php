@@ -58,4 +58,11 @@ class DashboardController extends Controller
             $request->query()
         );
     }
+
+    public function exportToPdf(Request $request)
+    {
+        return $this->reportService->exportComplaintsPdf(
+            $request->query()
+        );
+    }
 }

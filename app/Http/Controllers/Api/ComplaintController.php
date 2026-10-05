@@ -11,7 +11,6 @@ use App\Models\CompanySize;
 use App\Models\Complainant;
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
-use App\Models\SurveyResponse;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Database\QueryException;
@@ -179,6 +178,178 @@ class ComplaintController extends Controller
         ]);
     }
 
+    private function buildProvinceSummaryData(Request $request): array
+    {
+        $filters = $request->validate([
+            'period' => 'nullable|in:today',
+            'search' => 'nullable|string|max:255',
+            'sort' => 'nullable|in:provinsi,total,category',
+            'direction' => 'nullable|in:asc,desc',
+            'category_id' => 'nullable|required_if:sort,category|integer|exists:complaint_categories,id',
+            'with_categories' => 'nullable|boolean',
+            'limit' => 'nullable|integer|between:1,100',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|between:1,100',
+        ]);
+
+        $period = $filters['period'] ?? null;
+        $withCategories = filter_var($filters['with_categories'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $sort = $filters['sort'] ?? 'total';
+        $direction = $filters['direction'] ?? 'desc';
+
+        $categoryIds = $withCategories
+            ? ComplaintCategory::query()->orderBy('id')->pluck('id')
+            : collect();
+
+        if ($sort === 'category' && ! empty($filters['category_id'])) {
+            $categoryIds = $categoryIds->push($filters['category_id'])->unique()->values();
+        }
+
+        $baseQuery = Complaint::query()
+            ->join('companies', 'companies.id', '=', 'complaints.company_id')
+            ->when($period === 'today', fn ($query) => $query->whereDate('complaint_date', today()))
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $query->whereRaw('LOWER(companies.provinsi) LIKE ?', ['%'.mb_strtolower($search).'%']);
+            });
+
+        $totalComplaints = (clone $baseQuery)->count('complaints.id');
+        $provinceQuery = (clone $baseQuery)
+            ->select('companies.provinsi')
+            ->selectRaw('COUNT(complaints.id) AS count');
+
+        $categoryAliases = [];
+        foreach ($categoryIds as $categoryId) {
+            $categoryAliases[$categoryId] = 'category_'.$categoryId;
+        }
+
+        if ($categoryAliases !== []) {
+            $provinceQuery->selectRaw(
+                collect($categoryAliases)
+                    ->map(fn (string $alias) => 'SUM(CASE WHEN complaints.category_id = ? THEN 1 ELSE 0 END) AS '.$alias)
+                    ->implode(', '),
+                array_keys($categoryAliases)
+            );
+        }
+
+        $provinceQuery->groupBy('companies.provinsi');
+
+        $totalRows = (clone $baseQuery)->distinct()->count('companies.provinsi');
+
+        if ($sort === 'provinsi') {
+            $provinceQuery->orderBy('companies.provinsi', $direction);
+        } elseif ($sort === 'category' && ! empty($filters['category_id']) && isset($categoryAliases[$filters['category_id']])) {
+            $provinceQuery->orderBy($categoryAliases[$filters['category_id']], $direction);
+        } else {
+            $provinceQuery->orderBy('count', $direction);
+        }
+        $provinceQuery->orderBy('companies.provinsi');
+
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : null;
+        $rows = $limit !== null
+            ? $provinceQuery->limit($limit)->get()
+            : $provinceQuery->get();
+
+        $categories = $withCategories
+            ? ComplaintCategory::query()->orderBy('id')->get(['id', 'category_code', 'category_name'])
+            : collect();
+
+        $data = $rows->map(function ($province) use ($withCategories, $categories, $categoryAliases) {
+            $row = [
+                'provinsi' => $province->provinsi,
+                'count' => (int) $province->count,
+            ];
+
+            if ($withCategories) {
+                $row['category_counts'] = $categories->mapWithKeys(fn (ComplaintCategory $category) => [
+                    $category->category_code => (int) $province->{$categoryAliases[$category->id]},
+                ]);
+            }
+
+            return $row;
+        })->values();
+
+        return compact('data', 'categories', 'totalComplaints', 'totalRows', 'period', 'withCategories', 'filters', 'categoryAliases');
+    }
+
+    public function provinceSummaryPdf(Request $request)
+    {
+        $data = $this->buildProvinceSummaryData($request);
+
+        $headers = [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="laporan-provinsi-'.now()->format('Ymd_His').'.pdf"; filename*=UTF-8\'\'laporan-provinsi-'.now()->format('Ymd_His').'.pdf',
+        ];
+
+        return response()->stream(function () use ($data) {
+            $options = new Options;
+            $options->set('isRemoteEnabled', false);
+            $options->set('defaultFont', 'DejaVu Sans');
+
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($this->buildProvinceSummaryPdfHtml($data), 'UTF-8');
+            $dompdf->setPaper('A4', 'landscape');
+            $dompdf->render();
+
+            echo $dompdf->output();
+        }, 200, $headers);
+    }
+
+    private function buildProvinceSummaryPdfHtml(array $data): string
+    {
+        $period = $data['period'] === 'today' ? 'Hari Ini ('.today()->format('d M Y').')' : 'Semua Waktu';
+        $printedAt = now()->format('d M Y H:i');
+        $total = $data['totalComplaints'];
+        $totalRows = $data['totalRows'];
+        $withCats = $data['withCategories'];
+        $categories = $data['categories'];
+        $categoryAliases = $data['categoryAliases'];
+
+        $headerCols = '<th>No</th><th>Provinsi</th><th style="text-align:right">Total</th>';
+        if ($withCats) {
+            foreach ($categories as $cat) {
+                $headerCols .= '<th style="text-align:center">'.$cat->category_code.'</th>';
+            }
+        }
+        $headerCols .= '</tr>';
+
+        $bodyRows = '';
+        $no = 1;
+        foreach ($data['data'] as $row) {
+            $cells = '<td style="text-align:center">'.$no++.'</td><td>'.$row['provinsi'].'</td><td style="text-align:right">'.$row['count'].'</td>';
+            if ($withCats) {
+                foreach ($categories as $cat) {
+                    $cnt = $row['category_counts'][$cat->category_code] ?? 0;
+                    $cells .= '<td style="text-align:center">'.$cnt.'</td>';
+                }
+            }
+            $bodyRows .= '<tr>'.$cells.'</tr>';
+        }
+
+        return <<<HTML
+<!doctype html>
+<html><head><meta charset="UTF-8"><style>
+body { font-family: DejaVu Sans, sans-serif; font-size: 9pt; color: #111; line-height: 1.3; }
+h1 { font-size: 16pt; margin: 0 0 4px; text-align:center; }
+.meta { text-align:center; font-size: 8pt; color:#555; margin-bottom: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+th, td { border: 1px solid #ddd; padding: 4px 5px; }
+th { background: #f0f0f0; font-weight: bold; }
+tr:nth-child(even) td { background: #fafafa; }
+@page { margin: 10mm; size: A4 landscape; }
+</style></head><body>
+
+<h1>Rekap Pengaduan per Provinsi</h1>
+<div class="meta">Periode: {$period} | Dicetak: {$printedAt} | Total Pengaduan: {$total} | Provinsi: {$totalRows}</div>
+
+<table>
+    <thead><tr>{$headerCols}</thead>
+    <tbody>{$bodyRows}</tbody>
+</table>
+
+</body></html>
+HTML;
+    }
+
     public function statistics(Request $request)
     {
         $period = $request->validate([
@@ -219,17 +390,9 @@ class ComplaintController extends Controller
             })
             ->values();
 
-        $answers = SurveyResponse::whereHas('survey.complaint', $today)
-            ->pluck('answer')
-            ->filter(fn ($answer) => is_numeric(trim((string) $answer)) && (float) $answer >= 1 && (float) $answer <= 5)
-            ->map(fn ($answer) => (float) $answer);
-
         return response()->json([
             'data' => [
                 'total_complaints' => (clone $complaints)->count(),
-                'satisfaction_index' => $answers->isEmpty() ? null : round($answers->avg(), 2),
-                'satisfaction_scale' => 5,
-                'satisfaction_responses' => $answers->count(),
                 'by_company_size' => $companySizes,
                 'by_category' => $categories,
             ],
@@ -306,7 +469,7 @@ class ComplaintController extends Controller
             ]);
 
             foreach ($request->file('attachments', []) as $file) {
-                $complaint->addPhoto($file);
+                $complaint->addAttachment($file);
             }
 
             return $complaint;
@@ -479,7 +642,7 @@ class ComplaintController extends Controller
 
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="complaint-'.$complaint->id.'.pdf"',
+            'Content-Disposition' => 'attachment; filename="laporan-pengaduan-'.$complaint->id.'.pdf"; filename*=UTF-8\'\'laporan-pengaduan-'.$complaint->id.'.pdf',
         ]);
     }
 
@@ -523,20 +686,18 @@ class ComplaintController extends Controller
             ->firstOrFail();
     }
 
-    private function nextTicketNumber(): string
+    private function createComplaintWithUniqueTicket(array $data, int $retries = 10): Complaint
     {
-        return 'TCK-'.strtoupper(uniqid());
-    }
+        $base = Complaint::withoutGlobalScopes()->whereDate('created_at', today())->count();
 
-    private function createComplaintWithUniqueTicket(array $data, int $retries = 2): Complaint
-    {
         for ($attempt = 1; $attempt <= $retries; $attempt++) {
             try {
-                return Complaint::create([...$data, 'ticket_number' => $this->nextTicketNumber()]);
+                return Complaint::create([
+                    ...$data,
+                    'ticket_number' => 'TKT-'.now()->format('d-m-Y').'-'.str_pad((string) ($base + $attempt), 3, '0', STR_PAD_LEFT),
+                ]);
             } catch (QueryException $e) {
-                if ($attempt === $retries) {
-                    throw $e;
-                }
+                // Nomor sudah dipakai aduan lain, coba urutan berikutnya.
             }
         }
 
