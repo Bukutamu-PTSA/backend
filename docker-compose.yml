@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
     db:
         image: postgres:16-alpine
@@ -13,6 +11,50 @@ services:
             - "5433:5432"
         volumes:
             - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U binsis -d bukutamu_ptsa"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    backend:
+        build:
+            context: .
+        container_name: bukutamu_backend
+        restart: unless-stopped
+        depends_on:
+            db:
+                condition: service_healthy
+        environment:
+            APP_ENV: production
+            APP_DEBUG: "false"
+            APP_URL: http://localhost:8000
+            APP_KEY: ${APP_KEY:?Set APP_KEY in backend/.env}
+            DB_CONNECTION: pgsql
+            DB_HOST: db
+            DB_PORT: 5432
+            DB_DATABASE: bukutamu_ptsa
+            DB_USERNAME: binsis
+            DB_PASSWORD: password123
+            FRONTEND_URL: http://localhost:8080
+            SANCTUM_STATEFUL_DOMAINS: localhost:8080
+        ports:
+            - "8000:8000"
+        volumes:
+            - backend_storage:/app/storage
+
+    frontend:
+        build:
+            context: ../frontend
+            args:
+                VITE_API_HOST: http://localhost:8000
+        container_name: bukutamu_frontend
+        restart: unless-stopped
+        depends_on:
+            - backend
+        ports:
+            - "8080:8080"
 
 volumes:
     postgres_data:
+    backend_storage:
