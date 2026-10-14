@@ -14,6 +14,7 @@ class SurveyResponse extends Model
         'survey_id',
         'survey_question_id',
         'answer',
+        'submission_id',
     ];
 
     /**

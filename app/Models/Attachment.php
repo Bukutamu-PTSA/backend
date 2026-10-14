@@ -25,14 +25,6 @@ class Attachment extends Model
      */
     public function complaint(): BelongsTo
     {
-        return $this->belongsTo(Complaint::class);
-    }
-
-    /**
-     * Relasi ke kategori jenis berkas lampiran.
-     */
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(AttachmentCategory::class, 'attachment_category_id');
+        return $this->belongsTo(Complaint::class, 'complaint_id');
     }
 }

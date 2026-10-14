@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('nik', 16)->index();
             $table->text('alamat');
             $table->enum('jenis_kelamin', ['laki-laki', 'perempuan']);
-            $table->string('jabatan')->nullable();
+            $table->string('jabatan');
             $table->string('no_telp', 20);
-            $table->string('email')->nullable();
+            $table->string('email');
             $table->timestamps();
         });
     }

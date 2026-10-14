@@ -11,11 +11,11 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie','apiv1/*'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_filter(explode(',', env('FRONTEND_URL', 'http://localhost:3000,http://localhost:5173'))),
+    'allowed_origins' => array_filter(explode(',', env('FRONTEND_URL', 'http://localhost:3000,http://localhost:5173,http://192.168.158.235:8080,http://localhost:8000,http://192.168.147.199:8000'))),
 
     'allowed_origins_patterns' => [],
 
