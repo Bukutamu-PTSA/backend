@@ -8,6 +8,7 @@ use App\Models\Attachment;
 use App\Models\Complaint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 
 class AttachmentController extends Controller
 {
@@ -19,18 +20,45 @@ class AttachmentController extends Controller
     public function store(Complaint $complaint, Request $request)
     {
         $validated = $request->validate([
-            'attachments' => 'required|array|min:1',
-            'attachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'attachments' => [
+                'required',
+                'array',
+                'min:1',
+                'max:5',
+            ],
+
+            'attachments.*' => [
+                'required',
+                'file',
+                'mimes:jpg,jpeg,png,webp,pdf',
+                'mimetypes:image/jpeg,image/png,image/webp,application/pdf',
+                'max:5120',
+            ],
         ]);
 
-        $saved = collect($validated['attachments'])->map(fn ($file) => $complaint->addAttachment($file));
+        // File Signature Validation
+        foreach ($validated['attachments'] as $index => $file) {
+            if (!$this->validateFileSignature($file)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    "attachments.$index" => [
+                        'Format atau signature file tidak valid.',
+                    ],
+                ]);
+            }
+        }
+
+        // Simpan attachment setelah seluruh file lolos validasi
+        $saved = collect($validated['attachments'])
+            ->map(fn($file) => $complaint->addAttachment($file));
 
         return AttachmentResource::collection($saved)
-            ->additional(['success' => true, 'message' => count($saved).' lampiran berhasil diunggah'])
+            ->additional([
+                'success' => true,
+                'message' => count($saved) . ' lampiran berhasil diunggah',
+            ])
             ->response()
             ->setStatusCode(201);
     }
-
     public function destroy(Complaint $complaint, Attachment $attachment)
     {
         abort_unless($attachment->complaint_id === $complaint->id, 404);
@@ -39,5 +67,40 @@ class AttachmentController extends Controller
         $attachment->delete();
 
         return response()->json(['success' => true, 'message' => 'Lampiran dihapus']);
+    }
+    private function validateFileSignature(UploadedFile $file): bool
+    {
+        $mimeType = $file->getMimeType();
+
+        $signatures = [
+            'application/pdf' => '%PDF-',
+            'image/jpeg' => "\xFF\xD8\xFF",
+            'image/png' => "\x89PNG\r\n\x1A\n",
+        ];
+
+        $handle = fopen($file->getRealPath(), 'rb');
+
+        if (!$handle) {
+            return false;
+        }
+
+        $header = fread($handle, 12);
+
+        fclose($handle);
+
+        // Validasi khusus WebP
+        if ($mimeType === 'image/webp') {
+            return strlen($header) >= 12
+                && substr($header, 0, 4) === 'RIFF'
+                && substr($header, 8, 4) === 'WEBP';
+        }
+
+        $signature = $signatures[$mimeType] ?? null;
+
+        if ($signature === null) {
+            return false;
+        }
+
+        return str_starts_with($header, $signature);
     }
 }

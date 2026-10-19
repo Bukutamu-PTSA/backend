@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 
 class Complaint extends Model
 {
@@ -32,7 +33,7 @@ class Complaint extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope('active', fn (Builder $builder) => $builder->where('is_deleted', false));
+        static::addGlobalScope('active', fn(Builder $builder) => $builder->where('is_deleted', false));
     }
 
     /**
@@ -75,15 +76,34 @@ class Complaint extends Model
         return $this->hasMany(Notification::class);
     }
 
+
     public function addAttachment(UploadedFile $file): Attachment
     {
-        return $this->attachments()->create([
-            'file_name' => $file->getClientOriginalName(),
-            'file_path' => $file->store('complaints/'.$this->id, 'public'),
-            'file_type' => $file->getMimeType() === 'application/pdf' ? 'document' : 'photo',
-            'file_size' => $file->getSize(),
-            'mime_type' => $file->getMimeType(),
-        ]);
+        $mimeType = $file->getMimeType();
+
+        $filename = Str::uuid() . '.' . $file->extension();
+
+        $path = $file->storeAs(
+            'complaints/' . $this->id,
+            $filename,
+            'private'
+        );
+
+        try {
+            return $this->attachments()->create([
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+                'file_type' => $mimeType === 'application/pdf'
+                    ? 'document'
+                    : 'photo',
+                'file_size' => $file->getSize(),
+                'mime_type' => $mimeType,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Storage::disk('private')->delete($path);
+
+            throw $e;
+        }
     }
 
     /**
