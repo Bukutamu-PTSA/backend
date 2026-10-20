@@ -472,6 +472,10 @@ HTML;
                 $complaint->addAttachment($file);
             }
 
+            if ($request->hasFile('foto_pelapor')) {
+                $complaint->addAttachment($request->file('foto_pelapor'), 'foto_pelapor');
+            }
+
             return $complaint;
         });
 
