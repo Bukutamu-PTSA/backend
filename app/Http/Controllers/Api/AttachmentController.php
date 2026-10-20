@@ -20,37 +20,29 @@ class AttachmentController extends Controller
     public function store(Complaint $complaint, Request $request)
     {
         $validated = $request->validate([
-            'attachments' => [
-                'required',
-                'array',
-                'min:1',
-                'max:5',
-            ],
-
-            'attachments.*' => [
-                'required',
+            'attachments'             => ['nullable', 'array', 'max:5'],
+            'attachments.*.file'      => [
+                'required',   // kalau item attachments dikirim, file-nya wajib ada
                 'file',
                 'mimes:jpg,jpeg,png,webp,pdf',
                 'mimetypes:image/jpeg,image/png,image/webp,application/pdf',
                 'max:5120',
             ],
+            'attachments.*.file_type' => ['nullable', 'string', 'in:photo,document'],
         ]);
 
-        // File Signature Validation
-        foreach ($validated['attachments'] as $index => $file) {
-            if (!$this->validateFileSignature($file)) {
+        $items = $validated['attachments'] ?? [];
+
+        foreach ($items as $index => $item) {
+            if (!$this->validateFileSignature($item['file'])) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    "attachments.$index" => [
-                        'Format atau signature file tidak valid.',
-                    ],
+                    "attachments.$index.file" => ['Format atau signature file tidak valid.'],
                 ]);
             }
         }
 
-        // Simpan attachment setelah seluruh file lolos validasi
-        $saved = collect($validated['attachments'])
-            ->map(fn($file) => $complaint->addAttachment($file));
-
+        $saved = collect($items)
+            ->map(fn($item) => $complaint->addAttachment($item['file'], $item['file_type'] ?? null));
         return AttachmentResource::collection($saved)
             ->additional([
                 'success' => true,
