@@ -55,7 +55,7 @@ class AttachmentController extends Controller
     {
         abort_unless($attachment->complaint_id === $complaint->id, 404);
 
-        Storage::disk('public')->delete($attachment->file_path);
+        Storage::disk('local')->delete($attachment->file_path);
         $attachment->delete();
 
         return response()->json(['success' => true, 'message' => 'Lampiran dihapus']);

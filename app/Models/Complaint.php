@@ -86,7 +86,7 @@ class Complaint extends Model
         $path = $file->storeAs(
             'complaints/' . $this->id,
             $filename,
-            'private'
+            'local'
         );
 
         try {
