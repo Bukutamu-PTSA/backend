@@ -515,6 +515,16 @@ HTML;
 
         // "Foto Pemohon" = foto dari kamera (opsional). Kalau tidak ada, tampilkan kotak kosong.
         $photoAttachment = $complaint->attachments->firstWhere('file_type', 'foto_pelapor');
+        \Log::warning('DEBUG pdf', [
+            'complaint_id' => $complaint->id,
+            'attachments'  => $complaint->attachments->map->only('id', 'file_type', 'file_path')->all(),
+            'found'        => (bool) $photoAttachment,
+            'exists'       => $photoAttachment
+                ? Storage::disk('local')->exists($diskPath($photoAttachment->file_path))
+                : null,
+            'local_root'   => Storage::disk('local')->path(''),
+            'gd'           => extension_loaded('gd'),
+        ]);
 
         $photoHtml = '<div class="photo-placeholder"></div>';
         if ($photoAttachment) {
@@ -648,6 +658,11 @@ HTML;
         $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->setPaper('A4');
         $dompdf->render();
+        \Log::warning('DEBUG dompdf', [
+            'img_in_html' => str_contains($html, '<img class="photo"'),
+            'warnings'    => $GLOBALS['_dompdf_warnings'] ?? [],
+        ]);
+
 
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
