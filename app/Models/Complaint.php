@@ -77,7 +77,7 @@ class Complaint extends Model
     }
 
 
-    public function addAttachment(UploadedFile $file): Attachment
+    public function addAttachment(UploadedFile $file, ?string $fileType = null): Attachment
     {
         $mimeType = $file->getMimeType();
 
@@ -93,18 +93,17 @@ class Complaint extends Model
             return $this->attachments()->create([
                 'file_name' => $file->getClientOriginalName(),
                 'file_path' => $path,
-                'file_type' => $mimeType === 'application/pdf'
-                    ? 'document'
-                    : 'photo',
+                'file_type' => $fileType ?? ($mimeType === 'application/pdf' ? 'document' : 'photo'),
                 'file_size' => $file->getSize(),
                 'mime_type' => $mimeType,
             ]);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Storage::disk('private')->delete($path);
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
 
             throw $e;
         }
     }
+
 
     /**
      * Local Scope: Filter berdasarkan ID kategori aduan.
