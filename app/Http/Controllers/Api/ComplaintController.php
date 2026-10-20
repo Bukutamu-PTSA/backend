@@ -509,21 +509,25 @@ HTML;
         // kalau ada data lama yang masih tersimpan sebagai "/storage/xxx".
         $diskPath = fn($value) => ltrim(str_replace('/storage/', '', (string) $value), '/');
 
-        // "Foto Pemohon" = verification selfie (file_type = photo).
-        $photoAttachment = $complaint->attachments->firstWhere('file_type', 'photo');
+        // "Foto Pemohon" = foto dari kamera (opsional). Kalau tidak ada, tampilkan kotak kosong.
+        $photoAttachment = $complaint->attachments->firstWhere('file_type', 'foto_pelapor');
+
         $photoHtml = '<div class="photo-placeholder"></div>';
         if ($photoAttachment) {
             $path = $diskPath($photoAttachment->file_path);
             try {
-                if (Storage::disk('public')->exists($path)) {
-                    $photoHtml = '<img class="photo" src="data:' . $field($photoAttachment->mime_type)
-                        . ';base64,' . base64_encode(Storage::disk('public')->get($path))
+                if (Storage::disk('local')->exists($path)) {
+                    $mime = $photoAttachment->mime_type ?: 'image/jpeg';
+                    $photoHtml = '<img class="photo" src="data:' . $field($mime)
+                        . ';base64,' . base64_encode(Storage::disk('local')->get($path))
                         . '" alt="Foto Pemohon">';
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 \Log::warning("Gagal membaca foto pemohon untuk aduan #{$complaint->id}: {$e->getMessage()}");
             }
         }
+
+
 
         $nomor = $field($complaint->ticket_number);
         $tanggalSurat = $field(optional($complaint->complaint_date ?? now())->translatedFormat('d F Y'));
