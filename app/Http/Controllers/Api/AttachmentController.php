@@ -51,6 +51,25 @@ class AttachmentController extends Controller
             ->response()
             ->setStatusCode(201);
     }
+    /**
+     * Stream file lampiran dari disk private. Hanya bisa diakses lewat
+     * signed URL yang dibuat oleh AttachmentResource.
+     */
+    public function file(Complaint $complaint, Attachment $attachment)
+    {
+        abort_unless($attachment->complaint_id === $complaint->id, 404);
+
+        $path = $attachment->file_path;
+
+        abort_unless(Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, $attachment->file_name, [
+            'Content-Type' => $attachment->mime_type ?: 'application/octet-stream',
+            'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function destroy(Complaint $complaint, Attachment $attachment)
     {
         abort_unless($attachment->complaint_id === $complaint->id, 404);
