@@ -27,20 +27,23 @@ Route::get('/villages/{district_code}', [WilayahController::class, 'getVillages'
 
 Route::apiResource('complaint-categories', ComplaintCategoryController::class);
 Route::apiResource('faqs', FaqController::class);
-Route::get('industrial-sectors', fn () => IndustrialSector::orderBy('id')->get(['id', 'sector_code', 'sector_name']));
+Route::get('industrial-sectors', fn() => IndustrialSector::orderBy('id')->get(['id', 'sector_code', 'sector_name']));
 
 Route::post('complaints', [ComplaintController::class, 'store']);
-Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
 Route::get('dashboard/province-summary', [ComplaintController::class, 'provinceSummary']);
-Route::get('dashboard/province-summary/pdf', [ComplaintController::class, 'provinceSummaryPdf']);
-Route::get('dashboard/statistics', [ComplaintController::class, 'statistics']);
-Route::get('complaints/{complaint}/pdf', [ComplaintController::class, 'pdf']);
+Route::get('dashboard/complaint-summary', [ComplaintController::class, 'summary']);
 Route::apiResource('complaints', ComplaintController::class)->except('store');
-Route::get('complaints/{complaint}/attachments', [AttachmentController::class, 'index']);
+Route::get('complaints/{complaint}/attachments/{attachment}/file', [AttachmentController::class, 'file'])
+    ->middleware('signed:relative')
+    ->name('complaints.attachments.file');
 Route::post('complaints/{complaint}/attachments', [AttachmentController::class, 'store']);
-Route::delete('complaints/{complaint}/attachments/{attachment}', [AttachmentController::class, 'destroy']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('dashboard/province-summary/pdf', [ComplaintController::class, 'provinceSummaryPdf']);
+    Route::get('complaints/{complaint}/pdf', [ComplaintController::class, 'pdf']);
+    Route::get('complaints/{complaint}/attachments', [AttachmentController::class, 'index']);
+    Route::delete('complaints/{complaint}/attachments/{attachment}', [AttachmentController::class, 'destroy']);
+    Route::get('dashboard/statistics', [ComplaintController::class, 'statistics']);
     // Survey protected routes (Admin Only)
     Route::get('/surveys/responses', [SurveyController::class, 'responses'])
         ->middleware('role:admin,super_admin');
