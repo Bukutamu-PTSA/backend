@@ -39,4 +39,14 @@ class StoreComplaintRequest extends FormRequest
             'company.email' => 'nullable|email|max:255',
         ];
     }
+    public function messages(): array
+    {
+        return [
+            'attachments.array' => 'Berkas bukti harus dikirim dalam bentuk daftar file (array). Gunakan attachments[] saat mengunggah.',
+            'attachments.*.file' => 'Salah satu berkas bukti tidak valid. Pastikan file dikirim langsung melalui form-data, bukan dalam bentuk base64 atau teks.',
+            'attachments.*.uploaded' => 'Salah satu berkas bukti gagal diunggah. Pastikan file berhasil dipilih, ukuran tidak melebihi 5 MB, dan koneksi stabil saat mengunggah.',
+            'attachments.*.mimes' => 'Format berkas bukti tidak didukung. Hanya diperbolehkan: JPG, JPEG, PNG, WEBP, atau PDF.',
+            'attachments.*.max' => 'Ukuran berkas bukti maksimal 5 MB.',
+        ];
+    }
 }
