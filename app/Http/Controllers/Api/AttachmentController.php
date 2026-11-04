@@ -26,7 +26,7 @@ class AttachmentController extends Controller
                 'file',
                 'mimes:jpg,jpeg,png,webp,pdf',
                 'mimetypes:image/jpeg,image/png,image/webp,application/pdf',
-                'max:5120',
+                'max:2048',
             ],
             'attachments.*.file_type' => ['nullable', 'string', 'in:photo,document'],
         ]);
