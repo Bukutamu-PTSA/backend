@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CompanySize;
 use App\Models\Complaint;
 use App\Models\ComplaintCategory;
+use App\Models\Notification;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -85,6 +86,51 @@ class ReportService
             ->latest('complaint_date')
             ->limit($limit)
             ->get();
+    }
+
+    public function getComplaintNotifications(int $limit = 10): array
+    {
+        $unreadQuery = Complaint::query()
+            ->whereDoesntHave('notifications', fn ($query) => $query
+                ->whereNull('user_id')
+                ->where('is_read', true));
+
+        $unread = (clone $unreadQuery)->count();
+
+        $complaints = $unreadQuery
+            ->with([
+                'complainant:id,nama_lengkap',
+                'company:id,nama_perusahaan',
+                'category:id,category_name',
+            ])
+            ->latest('complaints.complaint_date')
+            ->limit($limit)
+            ->get();
+
+        return [
+            'count' => $unread,
+            'notifications' => $complaints->map(fn (Complaint $complaint) => [
+                'complaint_id' => $complaint->id,
+                'ticket_number' => $complaint->ticket_number,
+                'category' => $complaint->category?->category_name,
+                'complainant_name' => $complaint->complainant?->nama_lengkap,
+                'company' => $complaint->company?->nama_perusahaan,
+                'is_read' => false,
+                'created_at' => $complaint->created_at?->toIso8601String(),
+            ])->values(),
+        ];
+    }
+
+    public function markComplaintNotificationRead(Complaint $complaint): void
+    {
+        Notification::updateOrCreate(
+            ['complaint_id' => $complaint->id, 'user_id' => null],
+            [
+                'title' => 'Aduan '.$complaint->ticket_number,
+                'content' => $complaint->category?->category_name ?? $complaint->description,
+                'is_read' => true,
+            ]
+        );
     }
 
     public function getComplaintsByCategoryWithDateRange(
