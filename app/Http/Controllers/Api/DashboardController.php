@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Complaint;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
 
@@ -23,6 +24,36 @@ class DashboardController extends Controller
                 'complaints_by_company_size' => $this->reportService->getComplaintsByCompanySize(),
                 'recent_complaints' => $this->reportService->getRecentComplaints(5),
             ],
+        ]);
+    }
+
+    public function notifications(Request $request)
+    {
+        $limit = (int) ($request->validate([
+            'limit' => 'nullable|integer|between:1,50',
+        ])['limit'] ?? 10);
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->reportService->getComplaintNotifications($limit),
+        ]);
+    }
+
+    public function markNotificationRead(Complaint $complaint)
+    {
+        $this->reportService->markComplaintNotificationRead($complaint);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi ditandai sudah dibaca',
+        ]);
+    }
+
+    public function companySizeSummary()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->reportService->getComplaintsByCompanySize(),
         ]);
     }
 

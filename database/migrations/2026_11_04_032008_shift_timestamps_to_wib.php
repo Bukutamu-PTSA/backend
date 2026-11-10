@@ -56,6 +56,14 @@ return new class extends Migration
                     continue;
                 }
 
+                if (DB::connection()->getDriverName() === 'sqlite') {
+                    DB::statement(
+                        "UPDATE {$table} SET {$column} = datetime({$column}, '{$operator}7 hours') WHERE {$column} IS NOT NULL"
+                    );
+
+                    continue;
+                }
+
                 DB::statement(
                     "UPDATE {$table} SET {$column} = {$column} {$operator} interval '7 hours' WHERE {$column} IS NOT NULL"
                 );
