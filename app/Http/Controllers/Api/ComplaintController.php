@@ -27,14 +27,14 @@ class ComplaintController extends Controller
         ])['period'] ?? null;
 
         $categories = ComplaintCategory::withCount([
-            'complaints' => fn($query) => $query->when(
+            'complaints' => fn ($query) => $query->when(
                 $period === 'today',
-                fn($query) => $query->whereDate('complaint_date', today()),
+                fn ($query) => $query->whereDate('complaint_date', today()),
             ),
         ])
             ->orderBy('id')
             ->get(['id', 'category_code', 'category_name'])
-            ->map(fn(ComplaintCategory $category) => [
+            ->map(fn (ComplaintCategory $category) => [
                 'id' => $category->id,
                 'category_code' => $category->category_code,
                 'category_name' => $category->category_name,
@@ -43,7 +43,7 @@ class ComplaintController extends Controller
 
         $complaints = Complaint::query()->when(
             $period === 'today',
-            fn($query) => $query->whereDate('complaint_date', today()),
+            fn ($query) => $query->whereDate('complaint_date', today()),
         );
 
         return response()->json([
@@ -82,9 +82,9 @@ class ComplaintController extends Controller
 
         $baseQuery = Complaint::query()
             ->join('companies', 'companies.id', '=', 'complaints.company_id')
-            ->when($period === 'today', fn($query) => $query->whereDate('complaint_date', today()))
+            ->when($period === 'today', fn ($query) => $query->whereDate('complaint_date', today()))
             ->when($filters['search'] ?? null, function ($query, $search) {
-                $query->whereRaw('LOWER(companies.provinsi) LIKE ?', ['%' . mb_strtolower($search) . '%']);
+                $query->whereRaw('LOWER(companies.provinsi) LIKE ?', ['%'.mb_strtolower($search).'%']);
             });
 
         $totalComplaints = (clone $baseQuery)->count('complaints.id');
@@ -94,13 +94,13 @@ class ComplaintController extends Controller
 
         $categoryAliases = [];
         foreach ($categoryIds as $categoryId) {
-            $categoryAliases[$categoryId] = 'category_' . $categoryId;
+            $categoryAliases[$categoryId] = 'category_'.$categoryId;
         }
 
         if ($categoryAliases !== []) {
             $provinceQuery->selectRaw(
                 collect($categoryAliases)
-                    ->map(fn(string $alias) => 'SUM(CASE WHEN complaints.category_id = ? THEN 1 ELSE 0 END) AS ' . $alias)
+                    ->map(fn (string $alias) => 'SUM(CASE WHEN complaints.category_id = ? THEN 1 ELSE 0 END) AS '.$alias)
                     ->implode(', '),
                 array_keys($categoryAliases)
             );
@@ -146,7 +146,7 @@ class ComplaintController extends Controller
             ];
 
             if ($withCategories) {
-                $row['category_counts'] = $categories->mapWithKeys(fn(ComplaintCategory $category) => [
+                $row['category_counts'] = $categories->mapWithKeys(fn (ComplaintCategory $category) => [
                     $category->category_code => (int) $province->{$categoryAliases[$category->id]},
                 ]);
             }
@@ -156,7 +156,7 @@ class ComplaintController extends Controller
 
         return response()->json([
             'data' => $data,
-            'categories' => $withCategories ? $categories->map(fn(ComplaintCategory $category) => [
+            'categories' => $withCategories ? $categories->map(fn (ComplaintCategory $category) => [
                 'id' => $category->id,
                 'code' => $category->category_code,
                 'name' => $category->category_name,
@@ -207,9 +207,9 @@ class ComplaintController extends Controller
 
         $baseQuery = Complaint::query()
             ->join('companies', 'companies.id', '=', 'complaints.company_id')
-            ->when($period === 'today', fn($query) => $query->whereDate('complaint_date', today()))
+            ->when($period === 'today', fn ($query) => $query->whereDate('complaint_date', today()))
             ->when($filters['search'] ?? null, function ($query, $search) {
-                $query->whereRaw('LOWER(companies.provinsi) LIKE ?', ['%' . mb_strtolower($search) . '%']);
+                $query->whereRaw('LOWER(companies.provinsi) LIKE ?', ['%'.mb_strtolower($search).'%']);
             });
 
         $totalComplaints = (clone $baseQuery)->count('complaints.id');
@@ -219,13 +219,13 @@ class ComplaintController extends Controller
 
         $categoryAliases = [];
         foreach ($categoryIds as $categoryId) {
-            $categoryAliases[$categoryId] = 'category_' . $categoryId;
+            $categoryAliases[$categoryId] = 'category_'.$categoryId;
         }
 
         if ($categoryAliases !== []) {
             $provinceQuery->selectRaw(
                 collect($categoryAliases)
-                    ->map(fn(string $alias) => 'SUM(CASE WHEN complaints.category_id = ? THEN 1 ELSE 0 END) AS ' . $alias)
+                    ->map(fn (string $alias) => 'SUM(CASE WHEN complaints.category_id = ? THEN 1 ELSE 0 END) AS '.$alias)
                     ->implode(', '),
                 array_keys($categoryAliases)
             );
@@ -260,7 +260,7 @@ class ComplaintController extends Controller
             ];
 
             if ($withCategories) {
-                $row['category_counts'] = $categories->mapWithKeys(fn(ComplaintCategory $category) => [
+                $row['category_counts'] = $categories->mapWithKeys(fn (ComplaintCategory $category) => [
                     $category->category_code => (int) $province->{$categoryAliases[$category->id]},
                 ]);
             }
@@ -277,7 +277,7 @@ class ComplaintController extends Controller
 
         $headers = [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="laporan-provinsi-' . now()->format('Ymd_His') . '.pdf"; filename*=UTF-8\'\'laporan-provinsi-' . now()->format('Ymd_His') . '.pdf',
+            'Content-Disposition' => 'attachment; filename="laporan-provinsi-'.now()->format('Ymd_His').'.pdf"; filename*=UTF-8\'\'laporan-provinsi-'.now()->format('Ymd_His').'.pdf',
         ];
 
         return response()->stream(function () use ($data) {
@@ -296,7 +296,7 @@ class ComplaintController extends Controller
 
     private function buildProvinceSummaryPdfHtml(array $data): string
     {
-        $period = $data['period'] === 'today' ? 'Hari Ini (' . today()->format('d M Y') . ')' : 'Semua Waktu';
+        $period = $data['period'] === 'today' ? 'Hari Ini ('.today()->format('d M Y').')' : 'Semua Waktu';
         $printedAt = now()->format('d M Y H:i');
         $total = $data['totalComplaints'];
         $totalRows = $data['totalRows'];
@@ -307,7 +307,7 @@ class ComplaintController extends Controller
         $headerCols = '<th>No</th><th>Provinsi</th><th style="text-align:right">Total</th>';
         if ($withCats) {
             foreach ($categories as $cat) {
-                $headerCols .= '<th style="text-align:center">' . $cat->category_code . '</th>';
+                $headerCols .= '<th style="text-align:center">'.$cat->category_code.'</th>';
             }
         }
         $headerCols .= '</tr>';
@@ -315,14 +315,14 @@ class ComplaintController extends Controller
         $bodyRows = '';
         $no = 1;
         foreach ($data['data'] as $row) {
-            $cells = '<td style="text-align:center">' . $no++ . '</td><td>' . $row['provinsi'] . '</td><td style="text-align:right">' . $row['count'] . '</td>';
+            $cells = '<td style="text-align:center">'.$no++.'</td><td>'.$row['provinsi'].'</td><td style="text-align:right">'.$row['count'].'</td>';
             if ($withCats) {
                 foreach ($categories as $cat) {
                     $cnt = $row['category_counts'][$cat->category_code] ?? 0;
-                    $cells .= '<td style="text-align:center">' . $cnt . '</td>';
+                    $cells .= '<td style="text-align:center">'.$cnt.'</td>';
                 }
             }
-            $bodyRows .= '<tr>' . $cells . '</tr>';
+            $bodyRows .= '<tr>'.$cells.'</tr>';
         }
 
         return <<<HTML
@@ -355,9 +355,9 @@ HTML;
         $period = $request->validate([
             'period' => 'nullable|in:today',
         ])['period'] ?? null;
-        $today = fn($query) => $query->when(
+        $today = fn ($query) => $query->when(
             $period === 'today',
-            fn($query) => $query->whereDate('complaint_date', today()),
+            fn ($query) => $query->whereDate('complaint_date', today()),
         );
 
         $complaints = Complaint::query();
@@ -366,7 +366,7 @@ HTML;
         $categories = ComplaintCategory::withCount(['complaints' => $today])
             ->orderBy('id')
             ->get(['id', 'category_code', 'category_name'])
-            ->map(fn(ComplaintCategory $category) => [
+            ->map(fn (ComplaintCategory $category) => [
                 'id' => $category->id,
                 'category_code' => $category->category_code,
                 'category_name' => $category->category_name,
@@ -378,8 +378,8 @@ HTML;
             ->get(['id', 'size_code', 'size_name', 'min_employees', 'max_employees'])
             ->map(function (CompanySize $size) use ($period) {
                 $count = Complaint::query()
-                    ->when($period === 'today', fn($query) => $query->whereDate('complaint_date', today()))
-                    ->whereHas('company', fn($query) => $query->where('size_id', $size->id))
+                    ->when($period === 'today', fn ($query) => $query->whereDate('complaint_date', today()))
+                    ->whereHas('company', fn ($query) => $query->where('size_id', $size->id))
                     ->count();
 
                 return [
@@ -416,23 +416,24 @@ HTML;
 
         $complaints = Complaint::with(['complainant', 'company.sector', 'company.size', 'category', 'attachments'])
             ->when($filters['search'] ?? null, function ($query, $search) {
-                $term = '%' . mb_strtolower($search) . '%';
+                $term = '%'.mb_strtolower($search).'%';
 
                 $query->where(function ($query) use ($term) {
                     $query->whereRaw('LOWER(ticket_number) LIKE ?', [$term])
                         ->orWhereRaw('LOWER(description) LIKE ?', [$term])
-                        ->orWhereHas('complainant', fn($query) => $query
+                        ->orWhereHas('complainant', fn ($query) => $query
                             ->whereRaw('LOWER(nama_lengkap) LIKE ?', [$term])
                             ->orWhereRaw('LOWER(nik) LIKE ?', [$term]))
-                        ->orWhereHas('company', fn($query) => $query
+                        ->orWhereHas('company', fn ($query) => $query
                             ->whereRaw('LOWER(nama_perusahaan) LIKE ?', [$term]))
-                        ->orWhereHas('category', fn($query) => $query
+                        ->orWhereRaw('LOWER(category_other) LIKE ?', [$term])
+                        ->orWhereHas('category', fn ($query) => $query
                             ->whereRaw('LOWER(category_name) LIKE ?', [$term]));
                 });
             })
-            ->when($filters['category_id'] ?? null, fn($query, $categoryId) => $query->byCategory($categoryId))
-            ->when($filters['month'] ?? null, fn($query, $month) => $query->whereMonth('complaint_date', $month))
-            ->when($filters['year'] ?? null, fn($query, $year) => $query->whereYear('complaint_date', $year))
+            ->when($filters['category_id'] ?? null, fn ($query, $categoryId) => $query->byCategory($categoryId))
+            ->when($filters['month'] ?? null, fn ($query, $month) => $query->whereMonth('complaint_date', $month))
+            ->when($filters['year'] ?? null, fn ($query, $year) => $query->whereYear('complaint_date', $year))
             ->latest('complaint_date')
             ->paginate($filters['per_page'] ?? 15)
             ->withQueryString();
@@ -464,6 +465,9 @@ HTML;
                 'complainant_id' => $complainant->id,
                 'company_id' => $company->id,
                 'category_id' => $validated['category_id'],
+                'category_other' => ComplaintCategory::isOtherId($validated['category_id'])
+                    ? $validated['category_other']
+                    : null,
                 'description' => $validated['description'],
                 'complaint_date' => $validated['complaint_date'] ?? now(),
             ]);
@@ -494,7 +498,7 @@ HTML;
     {
         $complaint->load(['complainant', 'company.sector', 'company.size', 'category', 'attachments']);
 
-        $field = fn($value) => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
+        $field = fn ($value) => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
 
         // ALL-CAPS location values ("KALIMANTAN TIMUR") -> "Kalimantan Timur".
         $titleCase = function ($value) {
@@ -511,19 +515,19 @@ HTML;
         // Kolom di DB adalah "file_path" dan sudah berupa path relatif bersih
         // (contoh: "complaints/11/xxx.jpg"), tapi tetap di-strip jaga-jaga
         // kalau ada data lama yang masih tersimpan sebagai "/storage/xxx".
-        $diskPath = fn($value) => ltrim(str_replace('/storage/', '', (string) $value), '/');
+        $diskPath = fn ($value) => ltrim(str_replace('/storage/', '', (string) $value), '/');
 
         // "Foto Pemohon" = foto dari kamera (opsional). Kalau tidak ada, tampilkan kotak kosong.
         $photoAttachment = $complaint->attachments->firstWhere('file_type', 'foto_pelapor');
         \Log::warning('DEBUG pdf', [
             'complaint_id' => $complaint->id,
-            'attachments'  => $complaint->attachments->map->only('id', 'file_type', 'file_path')->all(),
-            'found'        => (bool) $photoAttachment,
-            'exists'       => $photoAttachment
+            'attachments' => $complaint->attachments->map->only('id', 'file_type', 'file_path')->all(),
+            'found' => (bool) $photoAttachment,
+            'exists' => $photoAttachment
                 ? Storage::disk('local')->exists($diskPath($photoAttachment->file_path))
                 : null,
-            'local_root'   => Storage::disk('local')->path(''),
-            'gd'           => extension_loaded('gd'),
+            'local_root' => Storage::disk('local')->path(''),
+            'gd' => extension_loaded('gd'),
         ]);
 
         $photoHtml = '<div class="photo-placeholder"></div>';
@@ -532,26 +536,24 @@ HTML;
             try {
                 if (Storage::disk('local')->exists($path)) {
                     $mime = $photoAttachment->mime_type ?: 'image/jpeg';
-                    $photoHtml = '<img class="photo" src="data:' . $field($mime)
-                        . ';base64,' . base64_encode(Storage::disk('local')->get($path))
-                        . '" alt="Foto Pemohon">';
+                    $photoHtml = '<img class="photo" src="data:'.$field($mime)
+                        .';base64,'.base64_encode(Storage::disk('local')->get($path))
+                        .'" alt="Foto Pemohon">';
                 }
             } catch (\Throwable $e) {
                 \Log::warning("Gagal membaca foto pemohon untuk aduan #{$complaint->id}: {$e->getMessage()}");
             }
         }
 
-
-
         $nomor = $field($complaint->ticket_number);
         $tanggalSurat = $field(optional($complaint->complaint_date ?? now())->translatedFormat('d F Y'));
         $kotaSurat = 'Jakarta';
         $sektorIndustri = $company?->sector?->sector_name ?? $company?->sektor_industri;
-        $perihal = $complaint->category?->category_name ?? '-';
+        $perihal = $field($complaint->jenis_pengaduan_label ?? '-');
 
         // Borderless two-column "field / value" row.
-        $row = fn(string $label, $value) => '<tr><td class="field">' . $field($label) . '</td>'
-            . '<td class="value">' . $field($value) . '</td></tr>';
+        $row = fn (string $label, $value) => '<tr><td class="field">'.$field($label).'</td>'
+            .'<td class="value">'.$field($value).'</td></tr>';
 
         $html = '<!doctype html><html><head><meta charset="UTF-8"><style>
     @page { margin: 90px 70px; }
@@ -584,10 +586,10 @@ HTML;
 </style></head><body>
 
     <table class="header-table">
-        <tr><td class="label">Nomor</td><td class="sep">:</td><td>' . $nomor . '</td></tr>
+        <tr><td class="label">Nomor</td><td class="sep">:</td><td>'.$nomor.'</td></tr>
         <tr><td class="label">Sifat</td><td class="sep">:</td><td>Segera</td></tr>
         <tr><td class="label">Lampiran</td><td class="sep">:</td><td>-</td></tr>
-        <tr><td class="label">Perihal</td><td class="sep">:</td><td>' . $perihal . '</td></tr>
+        <tr><td class="label">Perihal</td><td class="sep">:</td><td>'.$perihal.'</td></tr>
     </table>
 
     <div class="recipient">
@@ -599,38 +601,38 @@ HTML;
     <div class="opening">Dengan hormat,</div>
 
     <div class="body-paragraph">
-        Kami yang bertanda tangan di bawah ini, selaku perwakilan ' . $field($company?->nama_perusahaan ?: 'perusahaan') . '
+        Kami yang bertanda tangan di bawah ini, selaku perwakilan '.$field($company?->nama_perusahaan ?: 'perusahaan').'
         bermaksud menyampaikan permohonan tindak lanjut kendala pelaporan WLKP,
         dengan rincian data sebagai berikut:
     </div>
 
     <h3 class="section-title">Data Pemohon:</h3>
     <table class="data-table">
-        ' . $row('Nama Pemohon', $complainant?->nama_lengkap) . '
-        ' . $row('NIK', $complainant?->nik) . '
-        ' . $row('Alamat', $complainant?->alamat) . '
-        ' . $row('Jenis Kelamin', $complainant?->jenis_kelamin) . '
-        ' . $row('Jabatan', $complainant?->jabatan) . '
-        ' . $row('Telepon', $complainant?->no_telp) . '
-        ' . $row('Email', $complainant?->email) . '
+        '.$row('Nama Pemohon', $complainant?->nama_lengkap).'
+        '.$row('NIK', $complainant?->nik).'
+        '.$row('Alamat', $complainant?->alamat).'
+        '.$row('Jenis Kelamin', $complainant?->jenis_kelamin).'
+        '.$row('Jabatan', $complainant?->jabatan).'
+        '.$row('Telepon', $complainant?->no_telp).'
+        '.$row('Email', $complainant?->email).'
     </table>
 
     <h3 class="section-title">Data Perusahaan:</h3>
     <table class="data-table">
-        ' . $row('Nama Perusahaan', $company?->nama_perusahaan) . '
-        ' . $row('Sektor Industri', $sektorIndustri) . '
-        ' . $row('Alamat Perusahaan', $company?->alamat) . '
-        ' . $row('Jumlah Tenaga Kerja', $company?->jumlah_naker) . '
-        ' . $row('Provinsi', $titleCase($company?->provinsi)) . '
-        ' . $row('Kabupaten/Kota', $titleCase($company?->kota_kab)) . '
-        ' . $row('Kecamatan', $titleCase($company?->kecamatan)) . '
-        ' . $row('Kelurahan', $titleCase($company?->kelurahan)) . '
-        ' . $row('Telepon Perusahaan', $company?->no_telp) . '
-        ' . $row('Email Perusahaan', $company?->email) . '
+        '.$row('Nama Perusahaan', $company?->nama_perusahaan).'
+        '.$row('Sektor Industri', $sektorIndustri).'
+        '.$row('Alamat Perusahaan', $company?->alamat).'
+        '.$row('Jumlah Tenaga Kerja', $company?->jumlah_naker).'
+        '.$row('Provinsi', $titleCase($company?->provinsi)).'
+        '.$row('Kabupaten/Kota', $titleCase($company?->kota_kab)).'
+        '.$row('Kecamatan', $titleCase($company?->kecamatan)).'
+        '.$row('Kelurahan', $titleCase($company?->kelurahan)).'
+        '.$row('Telepon Perusahaan', $company?->no_telp).'
+        '.$row('Email Perusahaan', $company?->email).'
     </table>
 
     <h3 class="section-title">Kendala Pelaporan:</h3>
-    <div class="kendala-text">' . $field($complaint->description) . '</div>
+    <div class="kendala-text">'.$field($complaint->description).'</div>
 
     <div class="closing">
         Demikian surat ini kami sampaikan. Atas perhatian dan tindak lanjutnya,
@@ -640,14 +642,14 @@ HTML;
     <table class="footer-table">
         <tr>
             <td class="footer-photo">
-                ' . $photoHtml . '
+                '.$photoHtml.'
                 <div class="caption">Foto Pemohon</div>
             </td>
             <td class="footer-sign">
-                <div class="place-date">' . $kotaSurat . ', ' . $tanggalSurat . '</div>
+                <div class="place-date">'.$kotaSurat.', '.$tanggalSurat.'</div>
                 <div class="regards">Hormat kami,</div>
-                <div class="name">' . $field($complainant?->nama_lengkap) . '</div>
-                <div>No. Hp: ' . $field($complainant?->no_telp) . '</div>
+                <div class="name">'.$field($complainant?->nama_lengkap).'</div>
+                <div>No. Hp: '.$field($complainant?->no_telp).'</div>
             </td>
         </tr>
     </table>
@@ -660,13 +662,12 @@ HTML;
         $dompdf->render();
         \Log::warning('DEBUG dompdf', [
             'img_in_html' => str_contains($html, '<img class="photo"'),
-            'warnings'    => $GLOBALS['_dompdf_warnings'] ?? [],
+            'warnings' => $GLOBALS['_dompdf_warnings'] ?? [],
         ]);
-
 
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="laporan-pengaduan-' . $complaint->id . '.pdf"; filename*=UTF-8\'\'laporan-pengaduan-' . $complaint->id . '.pdf',
+            'Content-Disposition' => 'attachment; filename="laporan-pengaduan-'.$complaint->id.'.pdf"; filename*=UTF-8\'\'laporan-pengaduan-'.$complaint->id.'.pdf',
         ]);
     }
 
@@ -675,7 +676,17 @@ HTML;
         DB::transaction(function () use ($request, $complaint) {
             $validated = $request->validated();
 
-            $complaint->update(array_intersect_key($validated, array_flip(['category_id', 'description'])));
+            $complaintData = array_intersect_key($validated, array_flip(['category_id', 'description']));
+
+            if (ComplaintCategory::isOtherId($validated['category_id'] ?? $complaint->category_id)) {
+                if (array_key_exists('category_other', $validated)) {
+                    $complaintData['category_other'] = $validated['category_other'];
+                }
+            } else {
+                $complaintData['category_other'] = null;
+            }
+
+            $complaint->update($complaintData);
 
             if (($complainantData = $validated['complainant'] ?? null) && $complaint->complainant) {
                 $complaint->complainant->update($complainantData);
@@ -704,7 +715,7 @@ HTML;
     {
         return CompanySize::query()
             ->where('min_employees', '<=', $employeeCount)
-            ->where(fn($query) => $query
+            ->where(fn ($query) => $query
                 ->whereNull('max_employees')
                 ->orWhere('max_employees', '>=', $employeeCount))
             ->firstOrFail();
@@ -718,7 +729,7 @@ HTML;
             try {
                 return Complaint::create([
                     ...$data,
-                    'ticket_number' => 'TKT-' . now()->format('d-m-Y') . '-' . str_pad((string) ($base + $attempt), 3, '0', STR_PAD_LEFT),
+                    'ticket_number' => 'TKT-'.now()->format('d-m-Y').'-'.str_pad((string) ($base + $attempt), 3, '0', STR_PAD_LEFT),
                 ]);
             } catch (QueryException $e) {
                 // Nomor sudah dipakai aduan lain, coba urutan berikutnya.

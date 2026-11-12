@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ComplaintCategory;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreComplaintRequest extends FormRequest
 {
@@ -15,6 +17,12 @@ class StoreComplaintRequest extends FormRequest
     {
         return [
             'category_id' => 'required|exists:complaint_categories,id',
+            'category_other' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::requiredIf(fn () => ComplaintCategory::isOtherId($this->input('category_id'))),
+            ],
             'description' => 'required|string',
             'attachments' => 'nullable|array',
             'attachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
@@ -39,9 +47,12 @@ class StoreComplaintRequest extends FormRequest
             'company.email' => 'nullable|email|max:255',
         ];
     }
+
     public function messages(): array
     {
         return [
+            'category_other.required' => 'Jenis pengaduan wajib diisi jika memilih kategori Lainnya.',
+            'category_other.max' => 'Jenis pengaduan maksimal 255 karakter.',
             'attachments.array' => 'Berkas bukti harus dikirim dalam bentuk daftar file (array). Gunakan attachments[] saat mengunggah.',
             'attachments.*.file' => 'Salah satu berkas bukti tidak valid. Pastikan file dikirim langsung melalui form-data, bukan dalam bentuk base64 atau teks.',
             'attachments.*.uploaded' => 'Salah satu berkas bukti gagal diunggah. Pastikan file berhasil dipilih, ukuran tidak melebihi 2 MB, dan koneksi stabil saat mengunggah.',
