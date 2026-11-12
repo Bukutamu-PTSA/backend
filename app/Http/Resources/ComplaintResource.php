@@ -49,6 +49,8 @@ class ComplaintResource extends JsonResource
                 'no_telp' => $this->company?->no_telp,
                 'email' => $this->company?->email,
             ],
+            'category_other' => $this->category_other,
+            'jenis_pengaduan_label' => $this->jenis_pengaduan_label,
             'category' => [
                 'id' => $this->category?->id,
                 'category_code' => $this->category?->category_code,
