@@ -22,6 +22,7 @@ class ComplaintCategorySeeder extends Seeder
             ['category_code' => 'PEREMPUAN ANAK', 'category_name' => 'Perempuan dan anak'],
             ['category_code' => 'KADER K3', 'category_name' => 'Kader K3'],
             ['category_code' => 'SKP', 'category_name' => 'SKP'],
+            ['category_code' => ComplaintCategory::OTHER_CODE, 'category_name' => 'Lainnya'],
         ];
 
         foreach ($categories as $category) {

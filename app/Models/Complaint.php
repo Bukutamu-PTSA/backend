@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Complaint extends Model
@@ -18,6 +20,7 @@ class Complaint extends Model
         'complainant_id',
         'company_id',
         'category_id',
+        'category_other',
         'ticket_number',
         'description',
         'status',
@@ -33,7 +36,38 @@ class Complaint extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope('active', fn(Builder $builder) => $builder->where('is_deleted', false));
+        static::addGlobalScope('active', fn (Builder $builder) => $builder->where('is_deleted', false));
+    }
+
+    /**
+     * Jenis pengaduan yang diisi bebas pelapor; spasi berlebih dirapikan agar
+     * "Kader  K3" dan "Kader K3" tidak tersimpan sebagai dua nilai berbeda.
+     */
+    protected function categoryOther(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => filled($value)
+                ? trim(preg_replace('/\s+/u', ' ', $value))
+                : null,
+        );
+    }
+
+    /**
+     * Label jenis pengaduan untuk ditampilkan, mis. "Lainnya (Jagung rebus)".
+     */
+    protected function jenisPengaduanLabel(): Attribute
+    {
+        return Attribute::make(
+            get: function (): ?string {
+                $category = $this->category;
+
+                if ($category?->isOther() && filled($this->category_other)) {
+                    return "{$category->category_name} ({$this->category_other})";
+                }
+
+                return $category?->category_name;
+            },
+        );
     }
 
     /**
@@ -76,15 +110,14 @@ class Complaint extends Model
         return $this->hasMany(Notification::class);
     }
 
-
     public function addAttachment(UploadedFile $file, ?string $fileType = null): Attachment
     {
         $mimeType = $file->getMimeType();
 
-        $filename = Str::uuid() . '.' . $file->extension();
+        $filename = Str::uuid().'.'.$file->extension();
 
         $path = $file->storeAs(
-            'complaints/' . $this->id,
+            'complaints/'.$this->id,
             $filename,
             'local'
         );
@@ -98,12 +131,11 @@ class Complaint extends Model
                 'mime_type' => $mimeType,
             ]);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Storage::disk('local')->delete($path);
+            Storage::disk('local')->delete($path);
 
             throw $e;
         }
     }
-
 
     /**
      * Local Scope: Filter berdasarkan ID kategori aduan.

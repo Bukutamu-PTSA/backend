@@ -2,10 +2,33 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Complaint;
+use App\Models\ComplaintCategory;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateComplaintRequest extends FormRequest
 {
+    /**
+     * Teks "Lainnya" wajib bila kategori akhir adalah Lainnya dan aduan belum
+     * punya teks, atau teks dikirim tetapi dikosongkan.
+     */
+    private function requiresCategoryOther(): bool
+    {
+        /** @var Complaint|null $complaint */
+        $complaint = $this->route('complaint');
+
+        $effectiveCategoryId = $this->has('category_id')
+            ? $this->input('category_id')
+            : $complaint?->category_id;
+
+        if (! ComplaintCategory::isOtherId($effectiveCategoryId)) {
+            return false;
+        }
+
+        return $this->has('category_other') || blank($complaint?->category_other);
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -15,6 +38,12 @@ class UpdateComplaintRequest extends FormRequest
     {
         return [
             'category_id' => 'sometimes|exists:complaint_categories,id',
+            'category_other' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::requiredIf(fn () => $this->requiresCategoryOther()),
+            ],
             'description' => 'sometimes|string',
 
             'complainant.nama_lengkap' => 'sometimes|string|max:255',

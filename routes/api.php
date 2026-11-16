@@ -27,7 +27,7 @@ Route::get('/villages/{district_code}', [WilayahController::class, 'getVillages'
 
 Route::apiResource('complaint-categories', ComplaintCategoryController::class);
 Route::apiResource('faqs', FaqController::class);
-Route::get('industrial-sectors', fn() => IndustrialSector::orderBy('id')->get(['id', 'sector_code', 'sector_name']));
+Route::get('industrial-sectors', fn () => IndustrialSector::orderBy('id')->get(['id', 'sector_code', 'sector_name']));
 
 Route::post('complaints', [ComplaintController::class, 'store']);
 Route::get('dashboard/province-summary', [ComplaintController::class, 'provinceSummary']);
@@ -100,6 +100,9 @@ Route::prefix('v1')->group(function () {
     // Dashboard & Report Routes (Admin Only)
     Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
         Route::get('/dashboard/overview', [DashboardController::class, 'overview']);
+        Route::get('/dashboard/notifications', [DashboardController::class, 'notifications']);
+        Route::patch('/dashboard/notifications/{complaint}/read', [DashboardController::class, 'markNotificationRead']);
+        Route::get('/dashboard/company-size-summary', [DashboardController::class, 'companySizeSummary']);
         Route::get('/reports/by-category', [DashboardController::class, 'reportByCategory']);
         Route::get('/reports/by-company-size', [DashboardController::class, 'reportByCompanySize']);
         Route::get('/reports/export/csv', [DashboardController::class, 'exportToCsv']);

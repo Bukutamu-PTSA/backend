@@ -15,7 +15,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_filter(explode(',', env('FRONTEND_URL', 'http://localhost:3000,http://localhost:5173,http://192.168.158.235:8080,http://localhost:8000,http://192.168.147.199:8000'))),
+    'allowed_origins' => array_filter(explode(',', env('FRONTEND_URL', 'http://localhost:3000,http://localhost:5173,http://192.168.158.235:8080,http://localhost:8000,http://192.168.147.199:8000,https://bukutamu-ptsa.kemnaker.go.id,http://bukutamu-ptsa.kemnaker.go.id'))),
 
     'allowed_origins_patterns' => [],
 
