@@ -23,6 +23,8 @@ class ImportComplaintsCsv extends Command
     protected $signature = 'complaints:import-csv
         {path : Path ke file CSV hasil export Google Form}
         {--limit= : Hanya proses N baris data pertama}
+        {--delimiter=, : Pemisah kolom CSV, mis. ";" untuk file yang disimpan ulang lewat Excel}
+        {--date-format=d/m/Y G:i:s : Format kolom Timestamp (format PHP), mis. "n/j/Y G.i.s"}
         {--dry-run : Validasi dan tampilkan hasil tanpa menyimpan ke database}';
 
     /**
@@ -44,9 +46,19 @@ class ImportComplaintsCsv extends Command
         'waktu kerja waktu istirahat' => 'WAKTU_KERJA',
     ];
 
+    private string $dateFormat = 'd/m/Y G:i:s';
+
     public function handle(): int
     {
         $path = (string) $this->argument('path');
+        $delimiter = (string) $this->option('delimiter');
+        $this->dateFormat = (string) $this->option('date-format');
+
+        if (mb_strlen($delimiter) !== 1) {
+            $this->error('Opsi --delimiter harus tepat satu karakter.');
+
+            return self::FAILURE;
+        }
 
         if (! is_file($path) || ! is_readable($path)) {
             $this->error("File tidak ditemukan atau tidak bisa dibaca: {$path}");
@@ -65,7 +77,7 @@ class ImportComplaintsCsv extends Command
 
         $summary = ['imported' => 0, 'duplicate' => 0, 'skipped' => 0];
 
-        foreach ($this->readRows($path, $limit) as $lineNumber => $columns) {
+        foreach ($this->readRows($path, $delimiter, $limit) as $lineNumber => $columns) {
             try {
                 $row = $this->normalizeRow($columns);
             } catch (RuntimeException $exception) {
@@ -100,10 +112,11 @@ class ImportComplaintsCsv extends Command
      *
      * @return iterable<int, array<int, string>>
      */
-    private function readRows(string $path, ?int $limit): iterable
+    private function readRows(string $path, string $delimiter, ?int $limit): iterable
     {
         $file = new SplFileObject($path);
         $file->setFlags(SplFileObject::READ_CSV | SplFileObject::SKIP_EMPTY | SplFileObject::READ_AHEAD);
+        $file->setCsvControl($delimiter, '"', '');
 
         $processed = 0;
 
@@ -138,21 +151,25 @@ class ImportComplaintsCsv extends Command
             $district, $village, $companyPhone, $companyEmail, $description,
         ] = $columns;
 
+        if (! mb_check_encoding(implode('', $columns), 'UTF-8')) {
+            throw new RuntimeException('file bukan UTF-8, simpan ulang CSV dengan encoding UTF-8');
+        }
+
         if (! preg_match('/^\d{16}$/', $nik)) {
             throw new RuntimeException("NIK tidak valid ({$nik})");
         }
 
         foreach (['No. Telpon' => $phone, 'No. Telp Perusahaan' => $companyPhone] as $label => $number) {
+            if (preg_match('/\dE\+\d/i', $number)) {
+                throw new RuntimeException("{$label} rusak oleh format ilmiah Excel ({$number})");
+            }
+
             if (mb_strlen($number) > 20) {
                 throw new RuntimeException("{$label} lebih dari 20 karakter ({$number})");
             }
         }
 
-        try {
-            $complaintDate = CarbonImmutable::createFromFormat('d/m/Y G:i:s', $timestamp, config('app.timezone'));
-        } catch (\Throwable) {
-            throw new RuntimeException("format Timestamp tidak dikenali ({$timestamp})");
-        }
+        $complaintDate = $this->parseTimestamp($timestamp);
 
         return [
             'complaint_date' => $complaintDate,
@@ -224,12 +241,28 @@ class ImportComplaintsCsv extends Command
         return true;
     }
 
+    /**
+     * Parse ketat: tanggal yang "meluap" (mis. bulan 23 karena format hari/bulan tertukar) ditolak,
+     * bukan digeser diam-diam ke tanggal lain.
+     */
+    private function parseTimestamp(string $timestamp): CarbonImmutable
+    {
+        $date = \DateTimeImmutable::createFromFormat('!'.$this->dateFormat, $timestamp, new \DateTimeZone(config('app.timezone')));
+        $errors = \DateTimeImmutable::getLastErrors();
+
+        if ($date === false || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
+            throw new RuntimeException("Timestamp tidak sesuai format {$this->dateFormat} ({$timestamp})");
+        }
+
+        return CarbonImmutable::instance($date);
+    }
+
     private function normalizeGender(string $gender): string
     {
         $value = strtolower($gender);
 
         return match (true) {
-            preg_match('/^(l\b|laki|pria|male)/', $value) === 1 => 'laki-laki',
+            preg_match('/^(l\b|lak|pria|male)/', $value) === 1 => 'laki-laki',
             preg_match('/^(p\b|perempuan|wanita|female)/', $value) === 1 => 'perempuan',
             default => throw new RuntimeException("Jenis Kelamin tidak dikenali ({$gender})"),
         };

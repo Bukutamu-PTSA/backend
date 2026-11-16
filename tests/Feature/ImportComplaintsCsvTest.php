@@ -80,6 +80,67 @@ class ImportComplaintsCsvTest extends TestCase
         $this->assertSame(0, Complaint::count());
     }
 
+    public function test_it_imports_an_excel_style_semicolon_file_with_a_custom_date_format(): void
+    {
+        $header = str_replace(',', ';', self::HEADER);
+        $row = '9/23/2026 13.35.18;Wajib Lapor Ketenagakerjaan Perusahaan (WLKP);Netty Triyanti;3175096202890002;mandar;perempuan;direktur;081212182589;netty@example.com;pt mondar mandir;ayam potong;ciracas;400;dki jakarta;JAKARTA TIMUR (KOTA);ciracas;ciracas;02137687261;airlaya,as@example.com;tidak bisa isi bpjs tk npp';
+        $path = tempnam(sys_get_temp_dir(), 'pengaduan').'.csv';
+        file_put_contents($path, $header."\n".$row."\n");
+
+        $this->artisan('complaints:import-csv', [
+            'path' => $path,
+            '--delimiter' => ';',
+            '--date-format' => 'n/j/Y G.i.s',
+        ])->assertSuccessful();
+
+        $complaint = Complaint::with('company')->sole();
+
+        $this->assertSame('2026-09-23 13:35:18', $complaint->complaint_date->format('Y-m-d H:i:s'));
+        $this->assertSame('airlaya,as@example.com', $complaint->company->email);
+    }
+
+    public function test_it_rejects_a_timestamp_that_does_not_match_the_date_format(): void
+    {
+        $monthFirstRow = str_replace('23/09/2026 13:35:18', '09/23/2026 13:35:18', self::VALID_ROW);
+
+        $this->artisan('complaints:import-csv', ['path' => $this->csvFile($monthFirstRow)])
+            ->expectsOutputToContain('Timestamp tidak sesuai format')
+            ->assertSuccessful();
+
+        $this->assertSame(0, Complaint::count());
+    }
+
+    public function test_it_skips_rows_with_a_phone_number_mangled_into_scientific_notation(): void
+    {
+        $mangledPhoneRow = str_replace(',02137687261,', ',"6,22151E+11",', self::VALID_ROW);
+
+        $this->artisan('complaints:import-csv', ['path' => $this->csvFile($mangledPhoneRow)])
+            ->expectsOutputToContain('format ilmiah Excel')
+            ->assertSuccessful();
+
+        $this->assertSame(0, Complaint::count());
+    }
+
+    public function test_it_normalizes_common_gender_spellings(): void
+    {
+        $rows = [];
+
+        foreach (['Lak-laki', 'laki=laki', 'PRIA', 'P', 'wanita'] as $index => $gender) {
+            $rows[] = str_replace(
+                ['13:35:18', '3175096202890002', ',perempuan,'],
+                ['13:35:1'.$index, '317509620289000'.$index, ",{$gender},"],
+                self::VALID_ROW,
+            );
+        }
+
+        $this->artisan('complaints:import-csv', ['path' => $this->csvFile(...$rows)])->assertSuccessful();
+
+        $this->assertSame(
+            ['laki-laki', 'laki-laki', 'laki-laki', 'perempuan', 'perempuan'],
+            Complainant::orderBy('nik')->pluck('jenis_kelamin')->all(),
+        );
+    }
+
     public function test_complaint_resource_exposes_the_original_complaint_date(): void
     {
         $this->artisan('complaints:import-csv', ['path' => $this->csvFile(self::VALID_ROW)])
