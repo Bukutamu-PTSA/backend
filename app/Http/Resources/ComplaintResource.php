@@ -55,6 +55,7 @@ class ComplaintResource extends JsonResource
                 'category_name' => $this->category?->category_name,
                 'description' => $this->category?->description,
             ],
+            'complaint_date' => $this->complaint_date?->format('Y-m-d H:i:s'),
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
         ];
     }
