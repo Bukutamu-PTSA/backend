@@ -420,9 +420,9 @@ class ComplaintStoreTest extends TestCase
             ->assertJsonPath('meta.period', 'all')
             ->assertJsonPath('meta.total_complaints', 3)
             ->assertJsonPath('meta.total_rows', 2)
-            ->assertJsonPath('data.0.provinsi', 'Jawa Barat')
+            ->assertJsonPath('data.0.provinsi', 'JAWA BARAT')
             ->assertJsonPath('data.0.count', 2)
-            ->assertJsonPath('data.1.provinsi', 'DKI Jakarta')
+            ->assertJsonPath('data.1.provinsi', 'DAERAH KHUSUS IBUKOTA JAKARTA')
             ->assertJsonPath('data.1.count', 1);
 
         $this->getJson('/api/dashboard/province-summary?period=today')
@@ -472,18 +472,18 @@ class ComplaintStoreTest extends TestCase
             ->assertJsonPath('meta.limit', 2)
             ->assertJsonPath('meta.total_rows', 4)
             ->assertJsonPath('meta.total_complaints', 10)
-            ->assertJsonPath('data.0.provinsi', 'Jawa Barat')
+            ->assertJsonPath('data.0.provinsi', 'JAWA BARAT')
             ->assertJsonPath('data.0.count', 4)
-            ->assertJsonPath('data.1.provinsi', 'Jawa Tengah')
+            ->assertJsonPath('data.1.provinsi', 'JAWA TENGAH')
             ->assertJsonPath('data.1.count', 3);
 
         $this->getJson('/api/dashboard/province-summary?search=jawa&sort=provinsi&direction=asc')
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJsonPath('meta.total_rows', 3)
-            ->assertJsonPath('data.0.provinsi', 'Jawa Barat')
-            ->assertJsonPath('data.1.provinsi', 'Jawa Tengah')
-            ->assertJsonPath('data.2.provinsi', 'Jawa Timur');
+            ->assertJsonPath('data.0.provinsi', 'JAWA BARAT')
+            ->assertJsonPath('data.1.provinsi', 'JAWA TENGAH')
+            ->assertJsonPath('data.2.provinsi', 'JAWA TIMUR');
 
         $this->getJson('/api/dashboard/province-summary?per_page=2&page=2&sort=provinsi&direction=asc')
             ->assertOk()
@@ -491,23 +491,23 @@ class ComplaintStoreTest extends TestCase
             ->assertJsonPath('meta.page', 2)
             ->assertJsonPath('meta.per_page', 2)
             ->assertJsonPath('meta.last_page', 2)
-            ->assertJsonPath('data.0.provinsi', 'Jawa Tengah')
-            ->assertJsonPath('data.1.provinsi', 'Jawa Timur');
+            ->assertJsonPath('data.0.provinsi', 'JAWA TENGAH')
+            ->assertJsonPath('data.1.provinsi', 'JAWA TIMUR');
 
         $this->getJson('/api/dashboard/province-summary?with_categories=1&sort=provinsi&direction=asc')
             ->assertOk()
             ->assertJsonPath('categories.0.code', 'UPAH_KERJA')
             ->assertJsonPath('categories.1.code', 'K3')
-            ->assertJsonPath('data.0.provinsi', 'Bali')
+            ->assertJsonPath('data.0.provinsi', 'BALI')
             ->assertJsonPath('data.0.category_counts.UPAH_KERJA', 1)
             ->assertJsonPath('data.0.category_counts.K3', 0)
-            ->assertJsonPath('data.2.provinsi', 'Jawa Tengah')
+            ->assertJsonPath('data.2.provinsi', 'JAWA TENGAH')
             ->assertJsonPath('data.2.category_counts.UPAH_KERJA', 0)
             ->assertJsonPath('data.2.category_counts.K3', 3);
 
         $this->getJson('/api/dashboard/province-summary?sort=category&category_id=2&direction=desc')
             ->assertOk()
-            ->assertJsonPath('data.0.provinsi', 'Jawa Tengah')
+            ->assertJsonPath('data.0.provinsi', 'JAWA TENGAH')
             ->assertJsonPath('data.0.count', 3);
 
         $this->getJson('/api/dashboard/province-summary?sort=category')

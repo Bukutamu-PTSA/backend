@@ -84,12 +84,12 @@ class ComplaintController extends Controller
             ->join('companies', 'companies.id', '=', 'complaints.company_id')
             ->when($period === 'today', fn ($query) => $query->whereDate('complaint_date', today()))
             ->when($filters['search'] ?? null, function ($query, $search) {
-                $query->whereRaw('LOWER(companies.provinsi) LIKE ?', ['%'.mb_strtolower($search).'%']);
+                $query->whereRaw('LOWER('.$this->normalizedProvinceSql().') LIKE ?', ['%'.mb_strtolower($search).'%']);
             });
 
         $totalComplaints = (clone $baseQuery)->count('complaints.id');
         $provinceQuery = (clone $baseQuery)
-            ->select('companies.provinsi')
+            ->selectRaw($this->normalizedProvinceSql().' AS provinsi')
             ->selectRaw('COUNT(complaints.id) AS count');
 
         $categoryAliases = [];
@@ -106,18 +106,20 @@ class ComplaintController extends Controller
             );
         }
 
-        $provinceQuery->groupBy('companies.provinsi');
+        $provinceQuery->groupByRaw($this->normalizedProvinceSql());
 
-        $totalRows = (clone $baseQuery)->distinct()->count('companies.provinsi');
+        $totalRows = (int) (clone $baseQuery)
+            ->selectRaw('COUNT(DISTINCT '.$this->normalizedProvinceSql().') AS total')
+            ->value('total');
 
         if ($sort === 'provinsi') {
-            $provinceQuery->orderBy('companies.provinsi', $direction);
+            $provinceQuery->orderByRaw($this->normalizedProvinceSql().' '.($direction === 'asc' ? 'ASC' : 'DESC'));
         } elseif ($sort === 'category') {
             $provinceQuery->orderBy($categoryAliases[$filters['category_id']], $direction);
         } else {
             $provinceQuery->orderBy('count', $direction);
         }
-        $provinceQuery->orderBy('companies.provinsi');
+        $provinceQuery->orderByRaw($this->normalizedProvinceSql());
 
         $paginationRequested = array_key_exists('page', $filters) || array_key_exists('per_page', $filters);
         $limit = isset($filters['limit']) ? (int) $filters['limit'] : null;
@@ -178,6 +180,17 @@ class ComplaintController extends Controller
         ]);
     }
 
+    /**
+     * SQL expression yang menyeragamkan penulisan provinsi (huruf besar/kecil, spasi, dan alias DKI Jakarta).
+     */
+    private function normalizedProvinceSql(): string
+    {
+        $upper = 'UPPER(TRIM(companies.provinsi))';
+
+        return "CASE WHEN {$upper} IN ('JAKARTA', 'DKI JAKARTA', 'DAERAH KHUSUS IBUKOTA JAKARTA') "
+            ."THEN 'DAERAH KHUSUS IBUKOTA JAKARTA' ELSE {$upper} END";
+    }
+
     private function buildProvinceSummaryData(Request $request): array
     {
         $filters = $request->validate([
@@ -209,12 +222,12 @@ class ComplaintController extends Controller
             ->join('companies', 'companies.id', '=', 'complaints.company_id')
             ->when($period === 'today', fn ($query) => $query->whereDate('complaint_date', today()))
             ->when($filters['search'] ?? null, function ($query, $search) {
-                $query->whereRaw('LOWER(companies.provinsi) LIKE ?', ['%'.mb_strtolower($search).'%']);
+                $query->whereRaw('LOWER('.$this->normalizedProvinceSql().') LIKE ?', ['%'.mb_strtolower($search).'%']);
             });
 
         $totalComplaints = (clone $baseQuery)->count('complaints.id');
         $provinceQuery = (clone $baseQuery)
-            ->select('companies.provinsi')
+            ->selectRaw($this->normalizedProvinceSql().' AS provinsi')
             ->selectRaw('COUNT(complaints.id) AS count');
 
         $categoryAliases = [];
@@ -231,18 +244,20 @@ class ComplaintController extends Controller
             );
         }
 
-        $provinceQuery->groupBy('companies.provinsi');
+        $provinceQuery->groupByRaw($this->normalizedProvinceSql());
 
-        $totalRows = (clone $baseQuery)->distinct()->count('companies.provinsi');
+        $totalRows = (int) (clone $baseQuery)
+            ->selectRaw('COUNT(DISTINCT '.$this->normalizedProvinceSql().') AS total')
+            ->value('total');
 
         if ($sort === 'provinsi') {
-            $provinceQuery->orderBy('companies.provinsi', $direction);
+            $provinceQuery->orderByRaw($this->normalizedProvinceSql().' '.($direction === 'asc' ? 'ASC' : 'DESC'));
         } elseif ($sort === 'category' && ! empty($filters['category_id']) && isset($categoryAliases[$filters['category_id']])) {
             $provinceQuery->orderBy($categoryAliases[$filters['category_id']], $direction);
         } else {
             $provinceQuery->orderBy('count', $direction);
         }
-        $provinceQuery->orderBy('companies.provinsi');
+        $provinceQuery->orderByRaw($this->normalizedProvinceSql());
 
         $limit = isset($filters['limit']) ? (int) $filters['limit'] : null;
         $rows = $limit !== null
